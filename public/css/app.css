@@ -1,0 +1,531 @@
+/* Additions for the Laravel app on top of the prototype's stylesheet (nursery.css). Same tokens. */
+@media (prefers-reduced-motion: no-preference){@view-transition{navigation:auto}}
+.side a.it,.side .subs a{text-decoration:none}
+.side a.it{color:inherit}
+.ferr{font-size:var(--fs-caption);color:var(--error-700);display:flex;gap:4px;align-items:center}
+.ferr .ico{width:13px;height:13px}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--radius-md);font-size:var(--fs-small);margin-bottom:14px;border:1px solid}
+.alert .ico{width:16px;height:16px;flex:none;margin-top:1px}
+.alert.err{background:var(--error-50);color:var(--error-700);border-color:color-mix(in srgb,var(--error-600) 25%,transparent)}
+.alert.ok{background:var(--success-50);color:var(--success-700);border-color:color-mix(in srgb,var(--success-600) 25%,transparent)}
+.alert.info{background:var(--info-50);color:var(--info-700);border-color:color-mix(in srgb,var(--info-600,#0E7490) 25%,transparent)}
+.alert ul{margin:4px 0 0 16px;padding:0}
+
+/* Segmented control made of radio buttons */
+.segc label{position:relative;font:inherit;padding:0 12px;display:flex;align-items:center;font-size:var(--fs-small);color:var(--text-secondary);border-right:1px solid var(--border);background:var(--surface);cursor:pointer}
+.segc label:last-child{border-right:0}
+.segc label input{position:absolute;opacity:0;pointer-events:none}
+.segc label:has(input:checked){background:var(--primary-50);color:var(--primary-700);font-weight:600}
+.segc label:has(input:focus-visible){outline:2px solid var(--primary-600);outline-offset:-2px}
+.segc label:has(input:disabled){cursor:default}
+/* Choice drop-downs that replaced segmented controls in a card heading or entry bar keep their own width (02/11/2026). */
+.sh select[data-seg],.entrybar select[data-seg]{width:auto;max-width:100%}
+
+/* Check list (units, permissions) */
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.chk{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface);font-size:var(--fs-small);cursor:pointer}
+.chk:has(input:checked){border-color:var(--primary-600);background:var(--primary-50);color:var(--primary-700);font-weight:600}
+.chk input{accent-color:var(--primary-600)}
+.inp.err + .ferr,.segc.err{border-color:var(--error-600)}
+
+/* Permission matrix */
+.pmatrix{width:100%;border-collapse:collapse;font-size:var(--fs-small)}
+.pmatrix th,.pmatrix td{padding:9px 12px;border-bottom:1px solid var(--border);text-align:left}
+.pmatrix thead th{font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);font-weight:600;background:var(--surface-sunken);position:sticky;top:0;z-index:1}
+.pmatrix td.c,.pmatrix th.c{text-align:center;width:84px}
+.pmatrix tr.grp td{background:color-mix(in srgb,var(--primary-50) 55%,var(--surface));font-weight:600;color:var(--primary-700);font-size:12px;letter-spacing:.03em}
+.pmatrix tr.grp td .lnk{font-weight:500;margin-left:8px}
+.pmatrix input[type=checkbox]{width:17px;height:17px;accent-color:var(--primary-600);cursor:pointer}
+.pmatrix input[type=checkbox]:disabled{cursor:default}
+.pmatrix .na{color:var(--text-muted)}
+.pmatrix .via{display:inline-block;font-size:10.5px;color:var(--text-muted);margin-left:4px}
+.pmatrix tbody tr:hover td{background:var(--surface-sunken)}
+.pmatrix tr.grp:hover td{background:color-mix(in srgb,var(--primary-50) 55%,var(--surface))}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:var(--fs-caption);color:var(--text-muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:760px){.pmatrix td.c,.pmatrix th.c{width:auto;padding:9px 6px}.pmatrix th,.pmatrix td{padding:9px 8px}}
+
+.formfoot{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;position:sticky;bottom:0;padding:12px 0;background:linear-gradient(to top,var(--bg) 70%,transparent);z-index:2}
+.formfoot .sp{flex:1}
+.filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:14px}
+.filterbar .field{gap:4px}
+.filterbar .field label{font-size:var(--fs-caption);color:var(--text-muted)}
+.filterbar .inp{min-width:140px}
+.filterbar .grow{flex:1 1 220px}
+@media (max-width:760px){.filterbar .field{flex:1 1 100%}.filterbar .inp{width:100%}}
+.atable a.rowlink{color:inherit;text-decoration:none}
+.atable tr.clk{cursor:pointer}
+.empty{padding:36px 16px;text-align:center;color:var(--text-muted);font-size:var(--fs-small)}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 2px;font-size:var(--fs-small);color:var(--text-muted)}
+.pager .pg{display:flex;gap:4px;flex-wrap:wrap}
+.pager .pg a,.pager .pg span{min-width:32px;height:32px;display:inline-grid;place-items:center;padding:0 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);text-decoration:none}
+.pager .pg span.on{background:var(--primary-600);border-color:var(--primary-600);color:#fff;font-weight:600}
+.pager .pg span.dis{opacity:.45}
+.kv{display:grid;grid-template-columns:minmax(120px,200px) 1fr;gap:8px 16px;font-size:var(--fs-small)}
+.kv dt{color:var(--text-muted)}
+.kv dd{margin:0;word-break:break-word}
+.chg{width:100%;border-collapse:collapse;font-size:var(--fs-small)}
+.chg th,.chg td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.chg th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);background:var(--surface-sunken)}
+.chg .old{color:var(--error-700);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--error-600) 50%,transparent)}
+.chg .new{color:var(--success-700);font-weight:500}
+.pilllist{display:flex;flex-wrap:wrap;gap:6px}
+.timeline{display:grid;gap:0;font-size:var(--fs-small)}
+.timeline .ev{display:grid;grid-template-columns:14px 1fr;gap:10px;padding:8px 0;position:relative}
+.timeline .ev::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--primary-600);margin-top:6px;box-shadow:0 0 0 3px var(--primary-50)}
+.timeline .ev+.ev{border-top:1px dashed var(--border)}
+.timeline a{color:inherit}
+.rolecards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.rolecard{display:grid;gap:10px;padding:16px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);text-decoration:none;color:inherit;position:relative;overflow:hidden;transition:transform .2s var(--m-out,ease),box-shadow .2s,border-color .2s}
+.rolecard:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:color-mix(in srgb,var(--primary-600) 35%,var(--border))}
+.rolecard::after{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,#34D399,#047857 55%,#0E7490)}
+.rolecard h3{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+.rolecard .meter{height:6px;border-radius:6px;background:var(--surface-sunken);overflow:hidden}
+.rolecard .meter i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#047857,#0E7490)}
+.rolecard .stats{display:flex;gap:16px;font-size:var(--fs-caption);color:var(--text-muted)}
+.rolecard .stats b{color:var(--text-primary);font-size:15px;font-weight:600;display:block}
+
+/* Login */
+.login{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);background:var(--bg)}
+.login .brandside{position:relative;overflow:hidden;color:#fff;padding:48px 56px;display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(90% 70% at 20% 10%,#0F5A45 0%,#0B3B2E 45%,#072A21 100%)}
+.login .brandside::before{content:"";position:absolute;width:520px;height:520px;right:-160px;bottom:-200px;border-radius:50%;background:radial-gradient(circle,rgba(52,211,153,.28),transparent 65%);filter:blur(10px)}
+.login .brandside::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(80% 70% at 30% 40%,#000,transparent)}
+.login .brandside>*{position:relative;z-index:1}
+.login .mark{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:700;letter-spacing:.01em}
+.login .mark .bm{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,#34D399 0%,#047857 55%,#0E7490 100%);box-shadow:0 12px 34px rgba(52,211,153,.3),inset 0 1px 0 rgba(255,255,255,.4)}
+.login .pitch h2{font-size:34px;line-height:1.18;font-weight:700;letter-spacing:-.02em;max-width:460px}
+.login .pitch p{margin-top:14px;color:rgba(214,240,229,.8);max-width:420px;font-size:15px;line-height:1.6}
+.login .mods{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.login .mods span{padding:6px 12px;border-radius:999px;font-size:12.5px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#D1FAE5}
+.login .foot{font-size:12px;color:rgba(214,240,229,.55)}
+.login .formside{display:grid;place-items:center;padding:40px 24px}
+.login .lcard{width:100%;max-width:400px;display:grid;gap:18px}
+.login .lcard h1{font-size:26px;font-weight:700;letter-spacing:-.01em}
+.login .lcard .lead{color:var(--text-muted);font-size:var(--fs-small);margin-top:4px}
+.login .pw{position:relative}
+.login .pw .inp{padding-right:44px;width:100%}
+.login .pw button{position:absolute;right:4px;top:50%;transform:translateY(-50%)}
+.login .row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:var(--fs-small)}
+.login .row label{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+.login .row input{accent-color:var(--primary-600)}
+.login .btn.pri{width:100%;justify-content:center;height:44px;font-size:15px}
+.login .inp{height:44px;font-size:15px}
+.login .mobilemark{display:none}
+@media (prefers-reduced-motion: no-preference){
+  .login .brandside .pitch,.login .brandside .mods{animation:cin .7s var(--m-out,ease) both}
+  .login .brandside .mods{animation-delay:.12s}
+  .login .lcard>*{animation:cin .55s var(--m-out,ease) both}
+  .login .lcard>*:nth-child(2){animation-delay:.06s}.login .lcard>*:nth-child(3){animation-delay:.12s}.login .lcard>*:nth-child(4){animation-delay:.18s}.login .lcard>*:nth-child(5){animation-delay:.24s}
+}
+@media (max-width:900px){
+  .login{grid-template-columns:1fr}
+  .login .brandside{display:none}
+  .login .mobilemark{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;color:var(--text-primary)}
+  .login .mobilemark .bm{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#34D399 0%,#047857 55%,#0E7490 100%)}
+  .login .formside{place-items:start center;padding-top:56px}
+}
+a.btn,a.btn:hover{text-decoration:none}
+@media (max-width:760px){[data-matrix]{} .tablecard:has(> .pmatrix){max-height:none!important;overflow:visible!important}}
+.errpage{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px;background:radial-gradient(70% 60% at 50% 30%,color-mix(in srgb,var(--primary-50) 80%,transparent),var(--bg))}
+.errpage .box{max-width:440px;text-align:center;display:grid;gap:12px;justify-items:center}
+.errpage .code{font-size:64px;font-weight:700;letter-spacing:-.03em;background:linear-gradient(135deg,#34D399,#047857 55%,#0E7490);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1}
+.errpage h1{font-size:22px;font-weight:600}
+.errpage p{color:var(--text-muted);font-size:var(--fs-small)}
+
+/* CRM entry pages */
+.overlay[hidden],.alert[hidden]{display:none}
+.hint.txt{display:block}
+.entrybar form .inp{height:34px}
+.entrybar .capbtns{margin-left:auto}
+.lines td{padding:6px 8px}
+.lines td .inp.err{border-color:var(--error-600)}
+.repcard .fgrid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+
+/* Type-ahead pickers (decisions A11, UX2) */
+.picker .inp{width:100%}
+.entrypick{display:flex;align-items:center;gap:8px}
+.entrypick label{flex:none}
+.pklist{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;margin:0;padding:4px;list-style:none;max-height:320px;overflow:auto;background:var(--surface-elevated,var(--surface));border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg)}
+.entrypick .pklist{left:52px}
+.pklist li{display:grid;gap:1px;padding:7px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:var(--fs-small)}
+.pklist li small{color:var(--text-muted);font-size:var(--fs-caption)}
+.pklist li.on,.pklist li:hover{background:var(--primary-50);color:var(--primary-700)}
+.pklist li.none{cursor:default;color:var(--text-muted)}
+.pklist li.none:hover{background:none}
+
+/* Select with search (Sat 18/10/2026): the field is a button; its list opens at once with a search box on top. */
+.pkbtn{display:flex;align-items:center;gap:8px;text-align:left;cursor:pointer;width:100%;min-height:36px;font:inherit;color:var(--text-primary)}
+.pkbtn .pkval{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pkbtn .pkval.ph{color:var(--text-muted)}
+.pkbtn .pkchev{width:14px;height:14px;color:var(--text-muted);transition:transform .15s ease}
+.picker.open .pkbtn .pkchev{transform:rotate(180deg)}
+.pkbtn:disabled{cursor:not-allowed;opacity:.65;background:var(--surface-sunken)}
+.pkpop{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:45;min-width:240px;padding:6px;background:var(--surface-elevated,var(--surface));border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg)}
+.pkpop .pksearch{width:100%;margin-bottom:4px}
+.pkpop .pkinner{position:static;max-height:280px;border:0;box-shadow:none;padding:0}
+.pkpop li.cur{font-weight:600}
+.pkpop li.pkclear{color:var(--text-muted);font-style:italic}
+.pkstat{padding:6px 8px 2px;font-size:var(--fs-caption);color:var(--text-muted);display:flex;align-items:center;gap:6px;min-height:22px}
+.pkstat.loading::before,.pklist li.loading::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid var(--primary-600);border-right-color:transparent;animation:pkspin .7s linear infinite;flex:none}
+.pklist li.loading{display:flex;align-items:center;gap:8px}
+@keyframes pkspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.pkstat.loading::before,.pklist li.loading::before{animation-duration:2s}}
+/* Floating lists sit above every card, drawer and sticky bar of the page. */
+.pkfloat{z-index:1000}
+.pkpop.pkfloat{display:flex;flex-direction:column}
+.pkpop.pkfloat .pkinner{max-height:none;flex:1 1 auto;min-height:0;overflow:auto}
+.pklist.pkfloat{overflow:auto}
+@media (max-width:640px){.pkfloat.pkpop,.pkfloat.pklist{position:fixed!important;left:12px!important;right:12px!important;top:auto!important;bottom:12px!important;width:auto!important;max-height:70vh!important}}
+
+/* Skip to content (review M9) */
+.skiplink{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 14px;border-radius:var(--radius-md);background:var(--primary-700,#047857);color:#fff;font-weight:600;text-decoration:none}
+.skiplink:focus{top:12px;outline:2px solid #fff;outline-offset:2px}
+
+/* Phone menu (review M10): the user card scrolls with the menu, so the last items stay reachable */
+.shell.navopen .side{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.shell.navopen .side nav{flex:none;overflow:visible}
+.shell.navopen .side .me{flex:none}
+
+/* Server-side lists (rule P1): page size and sortable headers */
+.pager .perpage{display:flex;align-items:center;gap:6px;margin:0}
+.pager .perpage .inp.sm{height:32px;min-width:0;width:auto;padding:0 28px 0 8px}
+th .sorth{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+th .sorth:hover{color:var(--primary-700)}
+th .sorth:focus-visible{outline:2px solid var(--primary-600);outline-offset:2px;border-radius:2px}
+/* Controls needed only at phone width, e.g. Users list Sort by when the table header is hidden (user test B6) */
+@media (min-width:761px){.only-m{display:none!important}}
+
+/* ---- CRM changes (Sat 13/10/2026): workflow bar, alerts, follow-up due, dashboard charts, masters ---- */
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.tabs>a.tabl{padding:10px 10px;font-size:var(--fs-small);color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;text-decoration:none;min-height:44px;display:flex;align-items:center}
+.tabs>a.tabl.on{color:var(--primary-700);border-color:var(--primary-600);font-weight:600}
+.kvline{min-height:36px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:var(--fs-small)}
+.duetxt{color:var(--error-700)!important;font-weight:600}
+.inp.due{border-color:var(--error-600);background:var(--error-50)}
+
+/* Workflow of an enquiry: lead to PO */
+.flowbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:14px;overflow-x:auto}
+.flowbar ol{display:flex;gap:6px;margin:0;padding:0;list-style:none;min-width:max-content}
+.flowbar li{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;font-size:var(--fs-small)}
+.flowbar li+li::before{content:"";width:18px;height:1px;background:var(--border-strong);margin-right:4px}
+.flowbar .dot{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:600;background:var(--surface-sunken);color:var(--text-muted);border:1px solid var(--border);flex:none}
+.flowbar li.done .dot{background:var(--primary-600);border-color:var(--primary-600);color:#fff}
+.flowbar .dot .ico{width:13px;height:13px}
+.flowbar .tx{display:grid;line-height:1.25}
+.flowbar .tx b{font-weight:600;color:var(--text-primary)}
+.flowbar .tx a,.flowbar .tx span{font-size:var(--fs-caption)}
+
+/* Quotation: status bar, totals, cost details */
+.apcard .sb{display:grid;gap:12px}
+.apbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.apbar .sp{flex:1}
+.apbar form{display:inline}
+.custstat{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;border-top:1px dashed var(--border);padding-top:12px}
+.custstat .grow{flex:1 1 240px}
+.atable.lines tfoot td{border-bottom:0;padding:6px 8px;font-size:var(--fs-small)}
+.atable.lines tfoot tr.grand td{border-top:1px solid var(--border-strong);font-size:15px}
+.costbox{border:1px dashed color-mix(in srgb,var(--warning-600,#B45309) 45%,var(--border));border-radius:var(--radius-md);padding:12px 14px;display:grid;gap:12px;background:color-mix(in srgb,var(--warning-50,#FFFBEB) 55%,var(--surface))}
+.costhd{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.costhd h3{margin:0;font-size:15px}
+
+/* Documents */
+.docup{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.docup .grow{flex:1 1 260px}
+@media (max-width:760px){.docup .field{flex:1 1 100%}}
+
+/* Notifications & alerts on the top bar */
+.bellbtn{position:relative}
+.bellcount{position:absolute;top:-2px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--error-600);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;line-height:1}
+.pop .alertmi{text-decoration:none}
+.dotc{width:9px;height:9px;border-radius:50%;flex:none;background:var(--info-600,#0E7490)}
+.dotc.t-err{background:var(--error-600)}
+.dotc.t-warn{background:var(--warning-600,#B45309)}
+.dotc.zero{background:var(--border-strong)}
+/* Follow-up due: red pop up */
+.duepop .modal{border-top:4px solid var(--error-600)}
+.duepop .mh{display:flex;gap:8px;align-items:center;color:var(--error-700)}
+.duepop .mh .ico{width:20px;height:20px}
+.duepop .mh h3{color:var(--error-700)}
+.duelist{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.duelist li{padding:8px 10px;border-radius:var(--radius-sm);background:var(--error-50);border:1px solid color-mix(in srgb,var(--error-600) 25%,transparent)}
+.duelist a{color:var(--error-700);text-decoration:none}
+.duelist .cap{color:var(--error-700)}
+
+/* Dashboard */
+.dashkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px;margin-bottom:16px}
+a.kpi{text-decoration:none;color:inherit}
+a.kpi:focus-visible{outline:2px solid var(--primary-600);outline-offset:2px}
+.kpi .ovl{font-size:var(--fs-caption);color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi.kpidue .v{color:var(--error-700)}
+.cs1{fill:#047857;background:#047857}.cs2{fill:#0E7490;background:#0E7490}.cs3{fill:#B45309;background:#B45309}.cs4{fill:#7C3AED;background:#7C3AED}
+.cs5{fill:#BE185D;background:#BE185D}.cs6{fill:#4D7C0F;background:#4D7C0F}.cs7{fill:#1D4ED8;background:#1D4ED8}.cs8{fill:#6B7280;background:#6B7280}
+.piewrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.pie{width:170px;height:170px;flex:none}
+.pie path,.pie circle{stroke:var(--surface);stroke-width:.8}
+.chlegend{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:var(--fs-small);flex:1 1 180px}
+.chlegend li{display:flex;gap:8px;align-items:center}
+.chlegend .ln{flex:1}
+.chlegend.inline{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+.chlegend .sw{width:11px;height:11px;border-radius:3px;flex:none;display:inline-block}
+.bars{width:100%;height:auto}
+.bars .grid{stroke:var(--border);stroke-width:1}
+.bars .ax{fill:var(--text-muted);font-size:11px}
+.chartdata{margin:8px 0;font-size:var(--fs-small)}
+.chartdata summary{cursor:pointer;color:var(--primary-700)}
+.hbars{display:grid;gap:10px;margin-bottom:8px}
+.hbar{display:grid;grid-template-columns:110px 1fr 40px;gap:10px;align-items:center;font-size:var(--fs-small)}
+.hbar .ht{height:12px;border-radius:6px;background:var(--surface-sunken);overflow:hidden}
+.hbar .hf{display:block;height:100%;background:var(--primary-600);border-radius:6px}
+.hbar .hn{text-align:right}
+
+/* Masters */
+.mastergrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.mcardl{margin:0;padding:14px 16px;display:flex;gap:10px;align-items:center;text-decoration:none;color:inherit;min-height:52px}
+.mastersplit{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+@media (max-width:900px){.mastersplit{grid-template-columns:1fr}}
+.atable tr.sel td{background:var(--primary-50)}
+.pstable td.c,.pstable th.c{text-align:center;width:110px}
+.pstable input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary-600)}
+.grid2 .chartwide{grid-column:1/-1}
+.chartwide .bars{max-height:300px}
+.timeline .ev>span:empty{display:none}
+.segc label{white-space:nowrap}
+
+/* Review fixes (14/10/2026) */
+.duetag{display:inline-flex;align-items:center;gap:3px;margin-left:6px;font-size:var(--fs-caption);font-weight:600;color:var(--error-700);white-space:nowrap}
+.duetag .ico{width:13px;height:13px}
+.kpi.kpidue .v .ico{width:22px;height:22px;margin-right:6px;vertical-align:-2px}
+/* Phone: each quotation item is a card and the totals sit under the items (UX review M8) */
+@media (max-width:640px){
+  .tablecard:has(#qTable){overflow-x:visible!important}
+  #qTable,#qTable tbody,#qTable tfoot{display:block;width:100%}
+  #qTable thead{display:none}
+  #qTable tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;padding:40px 12px 12px;border-bottom:1px solid var(--border);position:relative;counter-increment:qitem}
+  #qTable tbody tr::before{content:"Item " counter(qitem);position:absolute;top:12px;left:12px;font-size:var(--fs-small);font-weight:600}
+  #qTable tbody td{display:block;padding:0;border:0;min-width:0}
+  #qTable tbody td[data-label]::before{content:attr(data-label);display:block;font-size:var(--fs-caption);color:var(--text-muted);margin-bottom:2px}
+  #qTable tbody td.wide{grid-column:1/-1}
+  #qTable tbody td[data-line-total]{text-align:left;font-weight:600;align-self:end}
+  #qTable tbody td.del{position:absolute;top:6px;right:6px}
+  #qTable tfoot tr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px}
+  #qTable tfoot td{display:block;border:0;padding:0}
+  #qTable tfoot td:empty{display:none}
+  #qTable tfoot .inp{width:140px}
+}
+#qTable tbody{counter-reset:qitem}
+@media (max-width:640px){
+  #qTable tbody tr{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  #qTable tbody td .inp{width:100%;min-width:0;max-width:100%}
+}
+@media (max-width:640px){
+  #qTable{min-width:0!important}
+  #qTable tbody td .inp{min-width:0!important}
+}
+
+/* Menu fly-out: a module's pages beside the menu on hover or keyboard focus (desktop with a mouse only). */
+.navfly{position:fixed;z-index:70;min-width:220px;max-width:280px;max-height:calc(100vh - 16px);overflow:auto;display:grid;gap:1px;padding:6px;border-radius:12px;
+  background:var(--sb-bg-2,#0b2a1f);color:var(--side-text,#d7e7df);border:1px solid var(--sb-line,rgba(255,255,255,.12));box-shadow:0 18px 40px rgba(4,25,15,.38);animation:flyIn .14s ease-out both}
+.navfly[hidden]{display:none}
+.navfly .flyh{font-size:12px;font-weight:700;color:#fff;padding:6px 10px 4px}
+.navfly .rgrp{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--side-muted,#9fbfb0);padding:10px 10px 2px}
+.navfly a{display:block;font-size:13px;line-height:18px;padding:8px 10px;border-radius:8px;color:var(--side-text,#d7e7df);text-decoration:none;min-height:24px}
+.navfly a:hover{background:rgba(255,255,255,.08);color:#fff}
+.navfly a:focus-visible{outline:2px solid var(--sb-mint,#34D399);outline-offset:-2px}
+.side .it.flyon{background:rgba(255,255,255,.06);color:#fff}
+.side .it.flyon .chev{transform:rotate(-90deg);opacity:.9}
+@keyframes flyIn{from{opacity:0;transform:translateX(-4px)}}
+@media (prefers-reduced-motion:reduce){.navfly{animation:none}}
+@media (max-width:1023px){.navfly{display:none!important}}
+
+/* A closed list stays closed whatever display rule the floating styles set. */
+.pkfloat[hidden]{display:none!important}
+
+/* Responsive lists (Sat 18/10/2026, CRM lists): no sideways scroll at any width. Wide screens show every column;
+   1024-1279 drop the c3 columns, tablets also drop c2, phones show each row as a card with the key fields and Open. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.listtop{display:flex;flex-direction:column}
+.listtop .listfold{order:-1}
+.listfold .tabs{margin-bottom:12px}
+.foldbtn,.foldsort,.filterbar.nosearch,table.fit .ph{display:none}
+table.fit td:not(.num){white-space:normal;overflow-wrap:anywhere}
+table.fit th{white-space:normal;height:auto;padding-top:8px;padding-bottom:8px;line-height:16px}
+table.fit td{height:auto;min-height:44px;padding-top:8px;padding-bottom:8px}
+@media (max-width:1279px){table.fit .c3{display:none}}
+@media (max-width:1023px){table.fit .c2{display:none}.tablecard:has(> table.fit){overflow-x:visible}}
+@media (max-width:640px){
+  table.fit .c1{display:none}
+  table.fit td.ph{display:block;grid-column:1/-1}
+  table.fit td.act .btn{width:100%;justify-content:center;min-height:44px}
+  .foldbtn{display:inline-flex}
+  .filterbar.nosearch{display:flex}
+  .listtop .filterbar .btn{flex:1 1 auto;justify-content:center;min-height:44px}
+  .listtop .listfold{order:0;display:none;margin:-6px 0 14px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md)}
+  .listtop .listfold.open{display:block}
+  .listfold .tabs{flex-direction:column;gap:2px;border-bottom:0;overflow:visible;margin-bottom:8px}
+  .listfold .tabs>a.tabl{border-bottom:0;border-left:3px solid transparent;margin:0;padding-left:12px;border-radius:0 8px 8px 0}
+  .listfold .tabs>a.tabl.on{border-left-color:var(--primary-600);background:var(--primary-50)}
+  .foldsort{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:end}
+  .foldsort .btn{grid-column:1/-1;justify-content:center;min-height:44px}
+}
+
+/* Date picker (Sat 18/10/2026): a calendar button inside every dd/mm/yyyy field and one floating calendar. */
+.dpwrap{position:relative;display:block;min-width:0}
+.dpwrap>.inp{width:100%;padding-right:40px}
+.dpbtn{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:8px;background:none;color:var(--text-secondary);cursor:pointer}
+.dpbtn:hover{background:var(--surface-sunken);color:var(--text-primary)}
+.dpbtn:disabled{opacity:.4;cursor:default}
+.dpbtn .ico{width:16px;height:16px}
+.dppop{position:fixed;z-index:1000;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 40px rgba(4,25,15,.18);padding:10px;max-width:calc(100vw - 16px)}
+.dppop[hidden]{display:none}
+.dphead{display:flex;align-items:center;gap:2px;margin-bottom:6px}
+.dptitle{flex:1;text-align:center;font-weight:600;font-size:14px}
+.dpnav{width:36px;height:36px;border:0;border-radius:8px;background:none;font-size:18px;line-height:1;color:var(--text-secondary);cursor:pointer}
+.dpnav:hover{background:var(--surface-sunken);color:var(--text-primary)}
+.dpgrid{width:100%;border-collapse:collapse;table-layout:fixed}
+.dpgrid th{font-size:11px;font-weight:600;color:var(--text-muted);padding:4px 0;text-align:center}
+.dpgrid td{padding:1px;text-align:center}
+.dpday{width:100%;height:36px;border:0;border-radius:8px;background:none;font:inherit;font-size:13px;color:var(--text-primary);cursor:pointer}
+.dpday:hover{background:var(--surface-sunken)}
+.dpday.out{color:var(--text-muted)}
+.dpday.today{box-shadow:inset 0 0 0 1px var(--primary-600);font-weight:600}
+.dpday.on{background:var(--primary-600);color:var(--on-primary);font-weight:600}
+.dpday:focus-visible,.dpnav:focus-visible,.dpbtn:focus-visible{outline:2px solid var(--primary-600);outline-offset:1px}
+.dpfoot{display:flex;gap:6px;align-items:center;margin-top:6px;border-top:1px solid var(--border);padding-top:8px}
+.dpfoot .sp{flex:1}
+@media (max-width:640px){.dpday,.dpnav{height:40px}}
+
+/* Sales page (review fixes 18/10/2026): live totals, the order card's Hide / Show label, item tables as cards on phones. */
+#invTotals [hidden]{display:none!important}
+details:not([open]) .when-open,details[open] .when-shut{display:none}
+table.lines tr.podone td{color:var(--text-muted)}
+@media (max-width:640px){
+  table.lines.rtable tfoot{display:block}
+  table.lines.rtable tfoot tr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+  table.lines.rtable tfoot td{display:block;border:0;padding:0;height:auto}
+  table.lines.rtable tfoot td:empty{display:none}
+  table.lines.rtable th[style*="min-width"],table.lines.rtable td{min-width:0!important}
+  table.lines.rtable tr.podone{grid-template-columns:minmax(0,1fr)}
+  #invTotals{max-width:none!important}
+}
+
+
+/* Round 2 (Sat 18/10/2026): the entry bar's "Entry" word is a search icon; the list Search button is icon-only. */
+.entrybar .entrypick{position:relative}
+.entrybar .entryico{position:absolute;left:10px;top:50%;transform:translateY(-50%);display:flex;color:var(--text-secondary);pointer-events:none;z-index:1}
+.entrybar .entrypick .inp{padding-left:34px}
+.listtop .filterbar .btn.icon{width:40px;flex:0 0 40px;justify-content:center}
+
+/* Import / export icon buttons (Sat 18/10/2026): icon only, one colour per kind, each at least 3:1 on white. */
+.btn.iob{width:36px;height:36px;padding:0;justify-content:center;border:1px solid currentColor;background:var(--surface);border-radius:var(--radius-sm)}
+.btn.iob .ico{width:18px;height:18px}
+.btn.iob:hover{background:color-mix(in srgb,currentColor 10%,var(--surface))}
+.btn.iob:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.iob-import{color:#0E7490}  /* cyan accent, 5.4:1 */
+.iob-excel{color:#15803D}   /* green, 5.0:1 */
+.iob-csv{color:#0F766E}     /* teal, 5.5:1 */
+.iob-pdf{color:#B91C1C}     /* red, 6.5:1 */
+.iob-print{color:#4B5563}   /* grey, 7.6:1 */
+@media (max-width:640px){.btn.iob{width:44px;height:44px}}
+
+/* Round 2 re-test B1: a long selected label (PO / Agreement's quotation) is cut short with "…" instead of widening the
+   field, so no form scrolls sideways on a phone. */
+.fgrid>.field,.picker{min-width:0}
+.pkbtn{min-width:0;max-width:100%}
+.field .hint{overflow-wrap:anywhere}
+/* Re-test S4: the magnifier's tooltip shows on hover. */
+.entrybar .entryico{pointer-events:auto;cursor:default}
+/* Enquiry: Contact name / Contact no sit in the form grid as before; hidden while a Prospect is picked (22/10/2026). */
+.contactpair{display:contents}
+.contactpair[hidden]{display:none}
+/* Menu bar (22/10/2026): every top-level menu across the top bar, in place of the breadcrumbs. The selected menu is
+   underlined; pointing at, tabbing to or tapping a menu drops down its pages (js/app.js). Nothing on the bar clips
+   (no overflow), so the drop-downs show in full. Phones and tablets (the drawer menu, up to 1023px) hide the bar and
+   keep the full side menu; the page title shows in its place. */
+.shell .top{position:relative;z-index:30}
+.topnav{flex:none;align-self:stretch;display:flex}
+.topnav ul{display:flex;align-items:stretch;gap:2px;margin:0;padding:0;list-style:none}
+.topnav .tnw{position:relative;display:flex}
+.topnav .tn{position:relative;display:inline-flex;align-items:center;gap:7px;padding:0 12px;font-size:13.5px;font-weight:500;color:var(--text-secondary);text-decoration:none;white-space:nowrap;transition:color .16s ease,background .16s ease}
+.topnav .tn .ico{width:16px;height:16px;flex:none}
+.topnav .tn .chev{width:12px;height:12px;opacity:.6;margin-left:-2px;transition:transform .16s ease}
+.topnav .tn:hover,.topnav .tn[aria-expanded="true"]{color:var(--text-primary);background:var(--surface-sunken)}
+.topnav .tn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.topnav .tn.on{color:var(--primary-700);font-weight:600}
+.topnav .tn.on::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--primary-600)}
+.topnav .tn:focus-visible{outline:2px solid var(--primary-600);outline-offset:-4px;border-radius:var(--radius-sm)}
+.tndd{position:absolute;left:0;top:100%;z-index:40;display:grid;gap:1px;min-width:220px;max-width:min(320px,calc(100vw - 16px));padding:6px;margin-top:-1px;background:var(--surface-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)}
+.tndd.end{left:auto;right:0}
+.tndd[hidden]{display:none}
+.tndd a{display:block;padding:8px 10px;border-radius:var(--radius-md);font-size:13px;line-height:18px;color:var(--text-secondary);text-decoration:none;white-space:normal}
+.tndd a:hover,.tndd a:focus{background:var(--surface-sunken);color:var(--text-primary)}
+.tndd a.on{background:var(--primary-50);color:var(--primary-700);font-weight:600}
+.tndd a:focus-visible{outline:2px solid var(--primary-600);outline-offset:-2px}
+@media (prefers-reduced-motion:reduce){.topnav .tn,.topnav .tn .chev{transition:none}}
+/* So more menus fit on the one row beside the chips: icons only on a large screen; on a narrower desktop no arrows
+   and no chip labels. Whatever still does not fit goes under "More". */
+.topnav .tn>.ico:first-child{display:none}
+@media (min-width:1536px){.topnav .tn{padding:0 12px}.topnav .tn>.ico:first-child{display:block}}
+@media (min-width:1024px) and (max-width:1535px){#unitName{display:inline-block;vertical-align:bottom;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.topnav .tn{padding:0 10px}}
+@media (min-width:1024px) and (max-width:1279px){
+  .topnav .tn{padding:0 8px}.topnav .tnw:not(.tnmore) .tn .chev{display:none}
+  .top .chipbtn .lbl{display:none}
+  #unitName{max-width:110px}
+}
+/* "More" holds the menus that do not fit on the row (js/app.js), each with its pages. */
+.topnav .tnw[hidden],.tnmg[hidden]{display:none}
+.topnav button.tn{font:inherit;font-size:13.5px;border:0;background:none;cursor:pointer;height:100%}
+.topnav button.tn:hover,.topnav button.tn[aria-expanded="true"]{background:var(--surface-sunken)}
+.tnmg{display:grid;gap:1px}
+.tnmg+.tnmg{border-top:1px solid var(--border);margin-top:4px;padding-top:4px}
+.tndd a.tnmh{font-weight:600;color:var(--text-primary)}
+.tndd a.tnms{padding-left:20px}
+/* A drop-down taller than the window shows in columns instead of scrolling (js/app.js). */
+.tndd.cols{display:block;column-gap:6px;max-width:calc(100vw - 16px);box-sizing:border-box}
+.tndd.cols .tnmg:not([hidden]){display:block;break-inside:auto}
+.tndd.cols a{break-inside:avoid}
+.tndd a{overflow-wrap:anywhere}
+/* No scroll bar on the menus (22/10/2026): long names wrap; the report groups fold to fit (js/app.js). If a very short
+   window still cannot hold the side menu, it can still be scrolled with the wheel or touch, without a bar showing. */
+.side nav,.shell.navopen .side,.navfly{scrollbar-width:none}
+.side nav::-webkit-scrollbar,.shell.navopen .side::-webkit-scrollbar,.navfly::-webkit-scrollbar{display:none;width:0;height:0}
+.shell .side .subs :is(button,a){white-space:normal;overflow-wrap:anywhere}
+.side .subs .rg,.side .subs .rgl{display:grid;gap:1px}
+.side .subs .rgl[hidden]{display:none}
+.shell .side .subs button.rgt{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;margin-top:4px;padding:6px 10px 4px 16px;font-size:10px;line-height:16px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;color:rgba(141,181,164,.85);background:none;border-radius:8px}
+.shell .side .subs button.rgt::before{display:none}
+.shell .side .subs button.rgt:hover{color:#fff;background:rgba(255,255,255,.06)}
+.side .subs .rgt .ico{width:12px;height:12px;flex:none;transition:transform .16s ease}
+.side .subs .rgt[aria-expanded="false"] .ico{transform:rotate(-90deg)}
+@media (min-width:1024px){.side nav.scoped .subs a{padding-top:5px;padding-bottom:5px}}
+@media (prefers-reduced-motion:reduce){.side .subs .rgt .ico{transition:none}}
+@media (max-width:1023px){.topnav{display:none}.shell .top .mtitle{display:block!important;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}}
+/* The side menu on a wide screen shows only the selected menu's reports; its pages are on the bar. */
+.side .norep{display:none}
+@media (min-width:1024px){
+  .side nav.scoped .it,.side nav.scoped .gl,.side nav.scoped .gsep,.side nav.scoped .subs .pg,.side nav.scoped .subs.nore{display:none}
+  .side nav.scoped .norep{display:block;margin:14px 10px;font-size:12.5px;color:var(--side-muted)}
+}
+/* ---- Dashboard: CRM page counts (22/10/2026). Tiles reuse .kpis.dashkpis and .card.kpi; only the section heading is new. ---- */
+.dashsect{margin:0 0 4px}
+.dashsect-h{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin:0 0 8px}
+.dashsect-h h2{font-size:16px;font-weight:600;color:var(--text-primary)}
+/* ---- Add new / Upload / Import buttons in green (Fri 23/10/2026) ----
+   ".btn.add" marks every button that adds a new entry or row, or uploads / imports a file, so it is easy to find.
+   The primary colour is already emerald (#047857, Save buttons), so these use a separate leaf green with a solid fill,
+   bold label and darker edge: white on #15803D is 5.0:1, hover #166534 7.1:1, pressed #14532D 9.1:1 (WCAG AA 4.5:1).
+   Save, Delete and the other buttons keep their own colours. The icon-only Import button (iob-import) is solid green too.
+   The app has one light theme (nursery.css "Grove"); the dark values below are ready if a dark theme comes back. */
+:root{--add-bg:#15803D;--add-bg-hover:#166534;--add-bg-active:#14532D;--add-edge:#116530;--add-text:#FFFFFF;--add-ring:#15803D}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--add-bg:#4ADE80;--add-bg-hover:#86EFAC;--add-bg-active:#BBF7D0;--add-edge:#22C55E;--add-text:#0B0D12;--add-ring:#4ADE80}}
+:root[data-theme="dark"]{--add-bg:#4ADE80;--add-bg-hover:#86EFAC;--add-bg-active:#BBF7D0;--add-edge:#22C55E;--add-text:#0B0D12;--add-ring:#4ADE80} /* dark text on #4ADE80: 11.2:1 */
+.btn.add,a.btn.add,.btn.iob.iob-import{background:var(--add-bg);color:var(--add-text);border:1px solid var(--add-edge);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.14)}
+.btn.add .ico,.btn.iob.iob-import .ico{color:inherit}
+.btn.add:hover,a.btn.add:hover,.btn.iob.iob-import:hover{background:var(--add-bg-hover);color:var(--add-text);border-color:var(--add-bg-hover)}
+.btn.add:active:not(:disabled),.btn.iob.iob-import:active:not(:disabled){background:var(--add-bg-active);border-color:var(--add-bg-active)}
+.btn.add:focus-visible,.btn.iob.iob-import:focus-visible{outline:2px solid var(--add-ring);outline-offset:2px}
+.btn.add:disabled,.btn.add[disabled],.btn.add[aria-disabled="true"],fieldset:disabled .btn.add{background:var(--add-bg);border-color:var(--add-edge);color:var(--add-text);opacity:.45;cursor:not-allowed;box-shadow:none;transform:none}
+@media (forced-colors:active){.btn.add,.btn.iob.iob-import{border:1px solid ButtonText}}
+/* PO / Agreement: choose the documents in the form itself when entering a new PO (Fri 23/10/2026). */
+.podocs{display:grid;gap:10px;margin-top:4px;padding:12px;border:1.5px dashed var(--border-strong);border-radius:var(--radius-md);background:var(--surface-sunken)}
+.podocs h3{display:flex;align-items:center;gap:6px;margin:0;font-size:14px;font-weight:600;color:var(--text-primary)}
+.podocs .fgrid{margin:0}

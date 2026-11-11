@@ -1,0 +1,36 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Serves the app at the folder address (http://localhost/nursery-app) instead of .../public.
+    # Only files inside public/ are ever served; everything else (.env, vendor, storage, config...) goes to Laravel and gets a 404.
+
+    # The front controller next to this file hands over to public/index.php.
+    RewriteRule ^index\.php$ - [L]
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # This folder's address (e.g. /nursery-app/), so the folder name is not hard-coded.
+    RewriteCond $1#%{REQUEST_URI} ^(.*)#(.*)\1$
+    RewriteRule ^(.*)$ - [E=APP_BASE:%2]
+
+    # Files that exist in public/ (css, js, images) are served from there.
+    RewriteCond %{DOCUMENT_ROOT}%{ENV:APP_BASE}public/$1 -f
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Redirect Trailing Slashes...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.+)/$ %{ENV:APP_BASE}$1 [L,R=301]
+
+    # Everything else goes to the front controller.
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>
