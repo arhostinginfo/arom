@@ -275,9 +275,11 @@ class TaxInvoiceFixesTest extends TestCase
         $inv->load(['lines.item.uom', 'party', 'salesOrder', 'transporter', 'currency', 'unit']);
         $html = view('pdf.sales-invoice', ['inv' => $inv, 'company' => Company::current(), 'logo' => null])->render();
 
-        // (11/11/2026) the header is in the flow, first in the body, so it prints on page 1 only; the footer is not in the
-        // view (a fixed element repeats on every page): the controller draws it on the last page only
-        $this->assertDoesNotMatchRegularExpression('/position:fixed/', $html);
+        // (11/11/2026) the header is fixed (every page); the totals are pinned to the bottom of the last page; the footer
+        // line is not in the view (a fixed element repeats on every page): the controller draws it on the last page only
+        $this->assertMatchesRegularExpression('/#pdf-header\{position:fixed/', $html);
+        $this->assertMatchesRegularExpression('/#pdf-totals-space\{[^}]*page-break-inside:avoid;visibility:hidden\}/', $html);
+        $this->assertMatchesRegularExpression('/#pdf-totals\{position:absolute;left:0;right:0;bottom:0\}/', $html);
         $this->assertStringNotContainsString('pdf-footer"', $html);
         $this->assertStringNotContainsString('computer generated', $html);
         $this->assertMatchesRegularExpression('/\.items thead\{display:table-header-group\}/', $html);
@@ -297,13 +299,15 @@ class TaxInvoiceFixesTest extends TestCase
         $this->assertSame(60, substr_count($html, '<tr class="ln">'));
         $this->assertStringContainsString('Description of goods', $html);
         $this->assertStringContainsString('CGST %', $html);
-        // totals once, after the last item
+        // totals after the last item: the invisible copy that keeps the room, then the visible one
         $this->assertSame(1, substr_count($html, 'id="pdf-totals"'));
-        $this->assertSame(1, substr_count($html, 'Grand total'));
-        $this->assertSame(1, substr_count($html, 'Amount in words:'));
-        $this->assertSame(1, substr_count($html, 'Authorised signatory'));
+        $this->assertSame(1, substr_count($html, 'id="pdf-totals-space"'));
+        $this->assertSame(2, substr_count($html, 'Grand total'));
+        $this->assertSame(2, substr_count($html, 'Amount in words:'));
+        $this->assertSame(2, substr_count($html, 'Authorised signatory'));
         $totals = strpos($html, 'id="pdf-totals"');
-        $this->assertGreaterThan(strrpos($html, '<tr class="ln">'), $totals);
+        $this->assertGreaterThan(strpos($html, 'id="pdf-totals-space"'), $totals);
+        $this->assertGreaterThan(strrpos($html, '<tr class="ln">'), strpos($html, 'id="pdf-totals-space"'));
         $tail = substr($html, $totals);
         foreach (['Taxable value', 'P&amp;F charges', 'CGST', 'SGST', 'Total GST', \App\Support\Money::indian($inv->grand_total, 2), 'Rupees', 'HSN/SAC', '8708',
             'Declaration:', 'For <b>Nursery Components Pvt Ltd</b>', 'Payment terms:'] as $s) {

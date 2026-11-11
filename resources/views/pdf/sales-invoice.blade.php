@@ -1,14 +1,17 @@
 {{--
   Tax invoice / credit note / debit note PDF, standard GST layout on A4 portrait (02/11/2026, client sheet: "keep header
-  fixed, footer fixed at bottom, GST & total amount on last page"; 11/11/2026: "header at first page, footer at last page").
-  - #pdf-header is in the normal flow at the top of the body, so it prints once, on the first page.
-  - The footer ("computer generated", company name, address, contact) is not in this view: dompdf repeats a fixed element
-    on every page, so SalesInvoiceController::invoicePdf() draws it in the bottom @page margin of the last page only.
-    It also draws the invoice no and "Page X of Y" at the bottom right of every page.
+  fixed, footer fixed at bottom, GST & total amount on last page"; 11/11/2026: "header on every page, the totals fixed as
+  the footer of the last page").
+  - #pdf-header is position:fixed inside the top @page margin, so dompdf repeats it on every page.
   - Bill to / Ship to / Transport print once, on the first page under the header.
   - The item table's head repeats on each page (thead); a row never splits across pages.
-  - #pdf-totals (totals, GST, amount in words, HSN summary, bank details, declaration, signatory) prints once, after the
-    last item, so it is on the last page.
+  - The totals block (HSN summary, amount in words, bank, payment terms, declaration, totals, signatory) is on the last
+    page only, at its bottom: an invisible copy (#pdf-totals-space) in the flow after the last item keeps its room, or
+    moves to a new page when it does not fit, and the visible copy (#pdf-totals, absolute, bottom:0) is drawn at the
+    bottom of that page.
+  - The footer line ("computer generated", company name, address, contact) is not in this view: dompdf repeats a fixed
+    element on every page, so SalesInvoiceController::invoicePdf() draws it in the bottom @page margin of the last page.
+    It also draws the invoice no and "Page X of Y" at the bottom right of every page.
   Only JPG logos are drawn where PHP's GD extension is off ($logo is null otherwise, and the PDF prints without it).
 --}}
 <!doctype html>
@@ -45,16 +48,16 @@
   $contact = trim(($company->phone ? 'Ph '.$company->phone : '').($company->phone && $company->email ? ' · ' : '').($company->email ?? ''));
 @endphp
 <style>
-  /* (11/11/2026) The header is in the flow on page 1 only, so the top margin is small; the bottom margin keeps room for
-     the footer (last page) and the page number (every page). */
-  @page{margin:28pt 28pt 50pt 28pt}
+  /* 192pt / 168pt: room for the header on every page, with a logo and a long company address (03/11/2026). The bottom
+     margin keeps room for the footer line (last page) and the page number (every page). */
+  @page{margin:192pt 28pt 50pt 28pt}
   body{font-family:"DejaVu Sans",sans-serif;font-size:7.6pt;color:#1f2937;line-height:1.3}
   table{width:100%;border-collapse:collapse}
   td,th{vertical-align:top}
   .r{text-align:right}
   .c{text-align:center}
   .muted{color:#6b7280}
-  #pdf-header{margin-bottom:6pt}
+  #pdf-header{position:fixed;top:-176pt;left:0;right:0;height:168pt}
   .co td{padding:0}
   .co .name{font-size:12.5pt;font-weight:bold;color:#065f46}
   .ttl{border:1px solid #065f46;text-align:center;padding:4pt 6pt}
@@ -74,13 +77,14 @@
   .sum td{padding:2.5pt;border:1px solid #d1d5db}
   .tot td{padding:2.5pt 5pt;border-bottom:1px solid #e5e7eb}
   .tot tr.grand td{font-weight:bold;font-size:9.5pt;border-top:1.5px solid #065f46;border-bottom:1.5px solid #065f46;background:#ecfdf5}
-  #pdf-totals{margin-top:8pt;page-break-inside:avoid}
+  #pdf-totals-space{margin-top:8pt;page-break-inside:avoid;visibility:hidden}
+  #pdf-totals{position:absolute;left:0;right:0;bottom:0}
   .sign{border:1px solid #9ca3af;padding:5pt 6pt;text-align:right;height:62pt}
 </style>
 </head>
 <body>
 
-{{-- ===== Header: first page only ===== --}}
+{{-- ===== Header: every page (fixed in the top margin) ===== --}}
 <div id="pdf-header">
   <table class="co">
     <tr>
@@ -187,8 +191,8 @@
   </tbody>
 </table>
 
-{{-- ===== Last page only: totals, GST, amount in words, HSN summary, bank, declaration, signatory ===== --}}
-<div id="pdf-totals">
+{{-- ===== Last page only, at its bottom: totals, GST, amount in words, HSN summary, bank, declaration, signatory ===== --}}
+@php ob_start(); @endphp
   <table>
     <tr>
       <td style="width:58%;padding-right:8pt">
@@ -246,8 +250,12 @@
       </td>
     </tr>
   </table>
-</div>
+@php $totals = ob_get_clean(); @endphp
+{{-- The same block twice: an invisible copy in the flow keeps its room after the last item (or moves to a new page when
+     it does not fit), and the visible copy is placed at the bottom of that page. --}}
+<div id="pdf-totals-space">{!! $totals !!}</div>
+<div id="pdf-totals">{!! $totals !!}</div>
 
-{{-- ===== Footer: last page only, drawn by SalesInvoiceController::invoicePdf() ===== --}}
+{{-- ===== Footer line: last page only, drawn by SalesInvoiceController::invoicePdf() ===== --}}
 </body>
 </html>

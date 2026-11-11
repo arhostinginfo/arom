@@ -304,9 +304,9 @@ class CombinedChangesReviewTest extends TestCase
 
     // ---- 4. PDF ----
 
-    public function test_pdf_header_on_the_first_page_footer_and_totals_on_the_last_page_only(): void
+    public function test_pdf_header_on_every_page_and_totals_at_the_bottom_of_the_last_page_only(): void
     {
-        // a long company address and a JPG logo (11/11/2026: header on page 1 only, footer on the last page only)
+        // a long company address and a JPG logo: the header must still fit above the body (192pt top margin)
         $this->company(['address' => str_repeat('Survey 12/3, Industrial Estate Road, ', 6)."\nChakan, Pune 410501"]);
         Storage::disk('local')->put('company/logo.jpg', $this->logo('JPG'));
         Company::query()->update(['logo_path' => 'company/logo.jpg']);
@@ -327,12 +327,13 @@ class CombinedChangesReviewTest extends TestCase
         $n = $p['count'];
         $this->assertGreaterThanOrEqual(3, $n);
         $all = range(1, $n);
-        // header: first page only (company, title, invoice no and date, place of supply)
-        $this->assertSame([1], $this->on($p, 'Survey 12/3'));
-        $this->assertSame([1, $n], $this->on($p, 'Nursery Components Pvt Ltd'), 'header, and "For …" at the signatory');
-        $this->assertSame([1], $p['texts']->filter(fn ($x) => $x['text'] === 'TAX INVOICE')->pluck('page')->unique()->values()->all());
-        $this->assertSame([1], $this->on($p, 'Place of supply'));
-        $this->assertSame([1], $this->on($p, 'Original for recipient'));
+        // header: every page (company, title, invoice no and date, place of supply)
+        $this->assertSame($all, $this->on($p, 'Survey 12/3'));
+        $this->assertSame($all, $this->on($p, 'Nursery Components Pvt Ltd'));
+        $this->assertSame($all, $p['texts']->filter(fn ($x) => $x['text'] === 'TAX INVOICE')->pluck('page')->unique()->values()->all());
+        $this->assertSame($all, $this->on($p, 'Place of supply'));
+        $this->assertSame($all, $this->on($p, 'Original for recipient'));
+        $this->assertSame($all, $this->on($p, $inv->invoice_no));
         // the item table head repeats; parties and transport only on page 1
         $this->assertSame($all, $this->on($p, 'Qty'));
         $this->assertSame([1], $this->on($p, 'Bill to'));
@@ -341,7 +342,11 @@ class CombinedChangesReviewTest extends TestCase
         foreach (['Grand total', 'Total GST', 'Amount in words:', 'Authorised signatory', 'Declaration:', 'P&F charges'] as $s) {
             $this->assertSame([$n], $this->on($p, $s), $s);
         }
+        // the totals are drawn once (the copy that keeps the room is invisible), at the bottom of the last page: the
+        // signatory box ends near the bottom margin
         $this->assertSame(1, $p['texts']->filter(fn ($x) => $x['text'] === 'Grand total')->count());
+        $sign = $p['texts']->filter(fn ($x) => $x['text'] === 'Authorised signatory')->max(fn ($x) => $x['y'] + $x['h']);
+        $this->assertGreaterThan(842 - 50 - 20, $sign, 'the totals are not at the bottom of the last page');
         // the footer is not in the page body: the controller draws it on the last page only
         $this->assertSame([], $this->on($p, 'computer generated'));
         $drawn = [];
@@ -360,9 +365,13 @@ class CombinedChangesReviewTest extends TestCase
         }
         $this->assertSame('This is a computer generated tax invoice.', $drawn[0]['text']);
         $this->assertStringStartsWith('Nursery Components Pvt Ltd · Survey 12/3', $drawn[1]['text']);
-        // the footer sits in the bottom margin, below the body (A4 842pt less the bottom margin)
+        // the header ends above the body (the @page top margin); the body and the footer line stay apart (A4 842pt less
+        // the bottom margin)
         preg_match('/@page\{margin:(\d+)pt 28pt (\d+)pt/', file_get_contents(resource_path('views/pdf/sales-invoice.blade.php')), $mg);
-        $bottom = 842 - (float) $mg[2];
+        [$top, $bottom] = [(float) $mg[1], 842 - (float) $mg[2]];
+        $header = $p['texts']->filter(fn ($x) => $x['y'] < $top);
+        $this->assertNotEmpty($header);
+        $this->assertLessThanOrEqual($top, $header->max(fn ($x) => $x['y'] + $x['h']), 'the header overflows into the body');
         $this->assertGreaterThanOrEqual($bottom, min(array_column($drawn, 'y')) - 4, 'the footer runs into the body');
         $this->assertLessThanOrEqual($bottom + 1, $p['texts']->max(fn ($x) => $x['y'] + $x['h']), 'the body runs into the footer');
         // every item row is drawn once: its HSN cell, 60 times, plus the 2 rows (18% and 12%) of the HSN summary
@@ -370,6 +379,31 @@ class CombinedChangesReviewTest extends TestCase
         // the real download has the same number of pages
         $pdf = $this->actingAs($this->sales())->get("/sales/invoices/{$inv->id}/pdf")->assertOk()->getContent();
         $this->assertSame($n, preg_match_all('#/Type\s*/Page[^s]#', $pdf));
+    }
+
+    public function test_pdf_totals_never_overlap_the_items_whatever_the_number_of_lines(): void
+    {
+        // 1 line; the first page nearly full (the totals then move to page 2); 50 lines (the client's example)
+        $this->company();
+        $party = $this->customer();
+        $a = $this->part($party, 'BRK-2210', 42.5, 'GST 18%', '8708');
+        foreach ([1, 8, 12, 14, 50] as $count) {
+            $lines = array_fill(0, $count, ['item_id' => $a->id, 'quantity' => '10', 'rate' => '']);
+            $this->actingAs($this->admin())->post('/sales/invoices', $this->invoicePayload($party, $lines))->assertSessionHasNoErrors();
+            $p = $this->pages(SalesInvoice::latest('id')->firstOrFail());
+            $n = $p['count'];
+            $this->assertSame([$n], $this->on($p, 'Grand total'), "$count lines");
+            $this->assertSame(range(1, $n), $this->on($p, 'Place of supply'), "$count lines: header on every page");
+            // the HSN cell of each item row, plus the one row of the HSN summary (the lowest)
+            $hsn = $p['texts']->filter(fn ($x) => $x['text'] === '8708')->sortBy(fn ($x) => [$x['page'], $x['y']])->values();
+            $this->assertSame($count + 1, $hsn->count(), "$count lines");
+            $rows = $hsn->slice(0, $count);
+            $lastRow = $rows->filter(fn ($x) => $x['page'] === $n)->max(fn ($x) => $x['y'] + $x['h']) ?? 0;
+            $totalsTop = $p['texts']->filter(fn ($x) => $x['page'] === $n && $x['text'] === 'HSN/SAC')->max('y');
+            $this->assertGreaterThan($lastRow, $totalsTop, "$count lines: the totals overlap the last items");
+            $sign = $p['texts']->filter(fn ($x) => $x['text'] === 'Authorised signatory')->max(fn ($x) => $x['y'] + $x['h']);
+            $this->assertGreaterThan(842 - 50 - 20, $sign, "$count lines: the totals are not at the bottom");
+        }
     }
 
     public function test_hsn_summary_has_one_row_per_hsn_and_rate(): void

@@ -34,3 +34,7 @@
 <IfModule !mod_rewrite.c>
     Require all denied
 </IfModule>
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# This domain inherits the “PHP” package.
+# php -- END cPanel-generated handler, do not edit

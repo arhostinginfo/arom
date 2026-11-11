@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\ApprovalController;
 use App\Http\Controllers\Admin\ConfigController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\MasterController;
 use App\Http\Controllers\Admin\PageSetupController;
 use App\Http\Controllers\Crm\ContactController;
@@ -44,6 +45,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/', fn () => redirect()->route('app.page', ['page' => 'reports']))->name('home');
 
     Route::prefix('admin')->name('admin.')->group(function () {
+        // Clear config, route, view, event, application and permission caches from the browser (Admin only).
+        Route::get('clear-cache', [MaintenanceController::class, 'clearCache'])->name('clear-cache');
         Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:users.view');
         Route::get('users/create', [UserController::class, 'create'])->name('users.create')->middleware('permission:users.add');
         Route::post('users', [UserController::class, 'store'])->name('users.store')->middleware('permission:users.add');

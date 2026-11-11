@@ -159,3 +159,20 @@ there that is always at last page".
   page, footer below the body). Whole suite: 1 skipped, 398 passed (8,658 assertions).
 - **Sample:** `docs/sales/sample-tax-invoice.pdf` (40 lines, 3 pages) regenerated and checked page by page.
 - **Backup** of the changed files: the scratchpad folder `pdf-header-footer-backup`.
+
+## Update 11/11/2026 (second request): header on every page, totals fixed at the bottom of the last page
+
+Request: the totals block (HSN summary, amount in words, payment terms, declaration, totals, signatory) "should be fixed
+at footer at last page", and "on every page header should be fixed", e.g. 50 items over 3 pages with the totals on the
+last page. This replaces the first 11/11 change (header on page 1 only).
+
+- **Header:** fixed in the top margin again, on every page (192pt top margin, as on 03/11).
+- **Totals block:** last page only, pinned to its bottom. An invisible copy after the last item keeps its room (or moves
+  to a new page when it does not fit), and the visible copy is drawn at the bottom of that page, so it never covers an
+  item.
+- **Footer line** ("computer generated", company, address, phone): last page only, under the totals.
+- **Every page:** item column heads repeat; "INV/… · Page X of Y" at the bottom right.
+- **Rows per page:** as many as fit (no fixed 20). With 2-line descriptions: about 14 on page 1 (Bill to / Ship to take
+  room), about 18 on the next pages; shorter descriptions fit more.
+- **Tests:** `TaxInvoiceFixesTest`, `CombinedChangesReviewTest` updated, plus
+  `test_pdf_totals_never_overlap_the_items_whatever_the_number_of_lines` (1, 8, 12, 14 and 50 lines).
