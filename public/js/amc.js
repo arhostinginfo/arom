@@ -14,6 +14,20 @@ $$('.overlay').forEach(function(l){$$('[data-x]',l).forEach(function(x){x.addEve
 document.addEventListener('keydown',function(e){if(e.key==='Escape')$$('.overlay').forEach(function(l){if(!l.hidden&&l.id!=='duePop')close(l)})});
 $$('.overlay[data-autoopen]').forEach(open);
 
+/* Uploads (21/11/2026): the files chosen together may be at most data-max-total-kb in all (the server's post limit) and
+   data-max-files in number, checked before sending; the per-file size and type check is app.js's. The server checks again. */
+function totalCheck(f){
+  if(!f.files||!f.files.length||f.validationMessage)return true;
+  var total=0,msg='';
+  for(var i=0;i<f.files.length;i++)total+=f.files[i].size;
+  if(f.files.length>(+f.dataset.maxFiles))msg='Choose at most '+f.dataset.maxFiles+' files at a time.';
+  else if(total>(+f.dataset.maxTotalKb)*1024)msg=f.dataset.totalMsg;
+  if(msg){f.setCustomValidity(msg);f.reportValidity();f.value='';return false}
+  return true;
+}
+document.addEventListener('change',function(e){var f=e.target;if(f.matches&&f.matches('input[type=file][data-max-total-kb]'))totalCheck(f)});
+$$('form.amcup').forEach(function(form){form.addEventListener('submit',function(e){var f=form.querySelector('input[type=file][data-max-total-kb]');if(f&&!totalCheck(f))e.preventDefault()})});
+
 /* AMC Client Master: add and remove location lines. */
 var body=$('#amcLines'),tpl=$('#amcLineTpl');
 function renumber(){$$('tr',body).forEach(function(tr,i){$$('[name^="lines["]',tr).forEach(function(inp){inp.name=inp.name.replace(/^lines\[[^\]]*\]/,'lines['+i+']')})})}

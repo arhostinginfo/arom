@@ -73,6 +73,28 @@ class AmcReviewFixesTest extends TestCase
         $this->assertStringNotContainsString('Forty Five', $red);
     }
 
+    public function test_one_upload_is_limited_to_40_mb_in_total(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake(config('amc.files_disk'));
+        $admin = $this->admin();
+        $c = $this->amcContract($this->amcClient());
+        $this->assertSame(40960, config('amc.max_total_kb'));
+
+        // 5 PDFs of 9 MB each: every file is under the 10 MB limit, together 45 MB
+        $big = fn ($n) => array_map(fn ($i) => \Illuminate\Http\UploadedFile::fake()->create("challan-$i.pdf", 9 * 1024, 'application/pdf'), range(1, $n));
+        $this->actingAs($admin)->post(route('amc.contract.files.store', $c), ['category' => 'challan_doc', 'files' => $big(5)])
+            ->assertSessionHasErrors(['files' => 'The files of one upload can be at most 40 MB in total. Upload them in smaller groups.']);
+        $this->assertSame(0, $c->files()->count());
+        // 4 of them, 36 MB: accepted
+        $this->actingAs($admin)->post(route('amc.contract.files.store', $c), ['category' => 'challan_doc', 'files' => $big(4)])->assertSessionHasNoErrors();
+        $this->assertSame(4, $c->files()->count());
+
+        // the page says so and gives the limits to the browser check
+        $html = $this->actingAs($admin)->get(route('amc.contract.show', $c))->assertOk()->getContent();
+        $this->assertStringContainsString('max 10 MB each, 40 MB in total, up to 20 at a time.', $html);
+        $this->assertStringContainsString('data-max-total-kb="40960" data-max-files="20"', $html);
+    }
+
     public function test_return_gardener_must_be_an_active_gardener(): void
     {
         $admin = $this->admin();

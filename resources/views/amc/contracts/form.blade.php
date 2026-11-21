@@ -212,8 +212,8 @@
               <form class="amcup" method="POST" action="{{ route('amc.contract.files.store', $c) }}" enctype="multipart/form-data" data-saving>
                 @csrf
                 <input type="hidden" name="category" value="{{ $cat }}">
-                <input class="inp" type="file" name="files[]" multiple required accept="{{ implode(',', array_map(fn ($t) => '.'.$t, $fc['types'])) }}" data-max-kb="{{ config('amc.max_file_kb') }}" aria-label="Files for {{ $fc['label'] }}" style="padding-top:6px">
-                <span class="hint">{{ strtoupper(implode(', ', array_diff($fc['types'], ['jpeg']))) }}, max {{ config('amc.max_file_kb') / 1024 }} MB each, up to {{ config('amc.max_files') }} at a time.@if (in_array('jpg', $fc['types'], true)) {{ $gd ? 'Two or more images chosen together are combined into one collage.' : '' }}@endif @if ($cat === 'deployment') Deleted automatically after 1 year.@endif</span>
+                <input class="inp" type="file" name="files[]" multiple required accept="{{ implode(',', array_map(fn ($t) => '.'.$t, $fc['types'])) }}" data-max-kb="{{ config('amc.max_file_kb') }}" data-max-total-kb="{{ config('amc.max_total_kb') }}" data-max-files="{{ config('amc.max_files') }}" data-total-msg="{{ \App\Http\Requests\Amc\AmcFileRequest::totalLimitMessage() }}" aria-label="Files for {{ $fc['label'] }}" style="padding-top:6px">
+                <span class="hint">{{ strtoupper(implode(', ', array_diff($fc['types'], ['jpeg']))) }}, max {{ config('amc.max_file_kb') / 1024 }} MB each, {{ config('amc.max_total_kb') / 1024 }} MB in total, up to {{ config('amc.max_files') }} at a time.@if (in_array('jpg', $fc['types'], true)) {{ $gd ? 'Two or more images chosen together are combined into one collage.' : '' }}@endif @if ($cat === 'deployment') Deleted automatically after 1 year.@endif</span>
                 <div><button class="btn add sm" type="submit"><svg class="ico"><use href="#i-upload"/></svg>Upload</button></div>
               </form>
             @endif

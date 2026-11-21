@@ -81,6 +81,9 @@ return [
     // Uploads: per file, files per upload, and the image sizes (pixels, JPEG quality) used when GD is available.
     'max_file_kb' => 10240,
     'max_files' => 20,
+    // (21/11/2026) All the files of one upload together: 40 MB, the server's post limit, so an upload over it gets a clear
+    // message instead of the server's generic error.
+    'max_total_kb' => 40960,
     'collage' => ['columns' => 2, 'tile_width' => 800, 'quality' => 75],
     'single_max' => 1600,
     'photo_max' => 600,
