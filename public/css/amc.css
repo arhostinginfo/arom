@@ -1,0 +1,63 @@
+/* AMC module (21/11/2026): styles used only by the AMC pages (resources/views/amc), loaded by amc/partials/assets. */
+
+/* AMC list colours: Green active, Red due within 30 days, Black overdue, Grey inactive. */
+.b-black{background:#111827;color:#fff}
+.amcdot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.amcdot.green{background:var(--success-600)}
+.amcdot.red{background:var(--error-600)}
+.amcdot.black{background:#111827}
+.amcdot.grey{background:var(--secondary-300,#cbd5e1)}
+table.amclist tr.c-green td:first-child{box-shadow:inset 4px 0 0 var(--success-600)}
+table.amclist tr.c-red td:first-child{box-shadow:inset 4px 0 0 var(--error-600)}
+table.amclist tr.c-black td:first-child{box-shadow:inset 4px 0 0 #111827}
+table.amclist tr.c-grey td:first-child{box-shadow:inset 4px 0 0 var(--secondary-300,#cbd5e1)}
+table.amclist tr.c-grey td{color:var(--text-muted)}
+table.amclist tr.c-black td.amcend{font-weight:600}
+table.amclist tr.c-red td.amcend{color:var(--error-700);font-weight:600}
+.amclegend{margin:0 0 12px}
+
+/* Overdue pop up on the contract page. */
+.amcpop .mh{color:var(--error-700)}
+.amcpop .mh .ico{color:var(--error-600)}
+
+/* Photos of AMC employees. */
+.amcphoto{width:56px;height:56px;border-radius:50%;object-fit:cover;background:var(--surface-sunken);border:1px solid var(--border);flex:none}
+.amcphoto.lg{width:96px;height:96px}
+.amcphoto.ph{display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--text-muted)}
+.amcpeople{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.amcperson{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);min-width:0}
+.amcperson>div{min-width:0;flex:1;display:grid;gap:6px}
+.amcperson form{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.amcperson input[type=file]{max-width:100%;min-width:0;flex:1 1 160px}
+
+/* Files of a contract: one box per kind, image thumbnails in a grid. */
+.amcboxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.amcbox{border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;display:grid;gap:10px;min-width:0;background:var(--surface)}
+.amcbox h3{margin:0;font-size:var(--fs-body,14px);font-weight:600}
+.amcbox form.amcup{display:grid;gap:8px}
+.amcbox input[type=file]{max-width:100%;min-width:0}
+.amcfiles{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.amcfiles li{display:flex;gap:8px;align-items:center;min-width:0}
+.amcfiles li .fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.amcfiles img{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex:none}
+
+/* The client's details under the customer picker. */
+.amcclient{display:grid;gap:8px}
+.amcclient .kv{display:flex;gap:16px;flex-wrap:wrap;font-size:var(--fs-small)}
+.amcdates .inp{font-weight:600}
+
+/* Dashboard lists. */
+.amclistmini{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.amclistmini li{display:flex;gap:8px;align-items:center;justify-content:space-between;min-width:0;flex-wrap:wrap}
+.amclistmini a{min-width:0;overflow-wrap:anywhere}
+
+@media (max-width:640px){
+  /* Phone cards: the colour runs down the card's left edge. */
+  table.amclist tr td:first-child{box-shadow:none!important}
+  table.amclist tr.c-green{border-left:5px solid var(--success-600)}
+  table.amclist tr.c-red{border-left:5px solid var(--error-600)}
+  table.amclist tr.c-black{border-left:5px solid #111827}
+  table.amclist tr.c-grey{border-left:5px solid var(--secondary-300,#cbd5e1)}
+  .amcperson{flex-wrap:wrap}
+  .amcclient .tablecard{overflow-x:auto}
+}

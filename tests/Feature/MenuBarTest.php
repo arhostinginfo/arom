@@ -19,7 +19,7 @@ class MenuBarTest extends TestCase
 
     protected $seed = true;
 
-    private const ALL = ['dashboard', 'crm', 'sales', 'purchase', 'accounts', 'admin', 'reports'];
+    private const ALL = ['dashboard', 'crm', 'sales', 'purchase', 'accounts', 'amc', 'admin', 'reports'];
 
     private function admin(): User
     {

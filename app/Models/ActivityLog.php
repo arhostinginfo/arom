@@ -94,6 +94,25 @@ class ActivityLog extends Model
         'grn.cancelled' => 'GRN cancelled',
         'approval.updated' => 'Approval rule changed',
         'settings.updated' => 'Config changed',
+        // AMC module (21/11/2026).
+        'amc_master.created' => 'AMC master entry added',
+        'amc_master.updated' => 'AMC master entry updated',
+        'amc_master.deleted' => 'AMC master entry deleted',
+        'amc_employee.created' => 'AMC employee added',
+        'amc_employee.updated' => 'AMC employee updated',
+        'amc_employee.deleted' => 'AMC employee deleted',
+        'amc_client.created' => 'AMC client added',
+        'amc_client.updated' => 'AMC client updated',
+        'amc_client.imported' => 'AMC clients imported',
+        'amc_contract.created' => 'AMC added',
+        'amc_contract.updated' => 'AMC updated',
+        'amc_contract.deleted' => 'AMC deleted',
+        'amc_file.uploaded' => 'AMC file uploaded',
+        'amc_file.deleted' => 'AMC file deleted',
+        'amc_file.purged' => 'Old deployment images deleted',
+        'amc_return.created' => 'Return / replace added',
+        'amc_return.updated' => 'Return / replace updated',
+        'amc_return.deleted' => 'Return / replace deleted',
     ];
 
     protected $guarded = [];
