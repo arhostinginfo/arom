@@ -144,14 +144,14 @@ class AmcReturnService
      * (23/11/2026) What has been returned and replaced so far, per entry of the client, for the Return & Replace page:
      * line id => ['state' => done|open|none, 'text' => ...]. A return with a Replace date is replaced; one without is
      * still open. Key '' holds the returns made for a Location without picking an entry, per Location. The return being
-     * edited is left out.
+     * edited is left out (except from 'count', the History link's count of every return of the entry).
      */
     public static function replaceStatus(int $clientId, ?int $exceptId = null): array
     {
         $out = ['' => []];
         // (23/11/2026) per row of the returns: a return with several rows counts once for each of its entries
         $rows = DB::table('amc_return_items as i')->join('amc_returns as r', 'r.id', '=', 'i.amc_return_id')
-            ->where('r.amc_client_id', $clientId)->when($exceptId, fn ($q) => $q->where('r.id', '!=', $exceptId))
+            ->where('r.amc_client_id', $clientId)
             ->get(['r.id', 'i.amc_client_line_id', 'r.location_1', 'r.request_date', 'r.replace_date', 'i.plant_qty', 'i.planter_qty'])
             ->map(fn ($x) => (object) [
                 'id' => $x->id, 'amc_client_line_id' => $x->amc_client_line_id, 'location_1' => $x->location_1,
@@ -159,8 +159,13 @@ class AmcReturnService
                 'replace_date' => $x->replace_date ? \Illuminate\Support\Carbon::parse($x->replace_date) : null,
                 'qty' => (int) ($x->plant_qty ?? $x->planter_qty ?? 0),
             ]);
-        foreach ($rows->whereNotNull('amc_client_line_id')->groupBy('amc_client_line_id') as $lineId => $rs) {
-            $out[$lineId] = self::statusOf($rs);
+        // (24/11/2026, test fix) the status leaves out the return being edited, but the History (n) count is of every
+        // return, as the History page lists them all (also when the return being edited is the entry's only one)
+        $all = $rows;
+        $rows = $exceptId ? $rows->where('id', '!=', $exceptId) : $rows;
+        $kept = $rows->whereNotNull('amc_client_line_id')->groupBy('amc_client_line_id');
+        foreach ($all->whereNotNull('amc_client_line_id')->groupBy('amc_client_line_id') as $lineId => $rsAll) {
+            $out[$lineId] = ['count' => $rsAll->count()] + self::statusOf($kept->get($lineId, []));
         }
         foreach ($rows->whereNull('amc_client_line_id')->groupBy(fn ($x) => (string) $x->location_1) as $loc => $rs) {
             $out[''][$loc] = self::statusOf($rs);
@@ -186,6 +191,7 @@ class AmcReturnService
         return [
             'state' => $open->count() ? 'open' : ($done->count() ? 'done' : 'none'),
             'text' => $parts ? implode(' · ', $parts) : 'Not replaced yet',
+            'count' => $rs->count(), // (24/11/2026) how many times returned: the History link
         ];
     }
 }

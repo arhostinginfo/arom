@@ -27,7 +27,7 @@
     <thead><tr>
       @include('partials.sorth', ['label' => 'Entry no', 'key' => 'added'])
       @include('partials.sorth', ['label' => 'Request date', 'key' => 'request'])
-      <th>Customer</th><th>Location</th><th>Rows</th><th class="r">Qty</th><th>Replace date</th><th>Quality</th>
+      <th>Customer</th><th>Location</th><th>Rows</th><th class="r">Qty</th><th>Replace date</th><th>Quality</th><th>History</th>
     </tr></thead>
     <tbody>
     @forelse ($rows as $r)
@@ -40,9 +40,10 @@
         <td data-label="Qty" class="r num">{{ \App\Support\Money::indian($r->items->sum(fn ($i) => $i->qty())) }}</td>
         <td data-label="Replace date" class="num">{{ $r->replace_date?->format($df) }}</td>
         <td data-label="Quality">@foreach ($r->items->pluck('quality')->filter()->unique() as $qq)<span class="badge {{ ['Reusable' => 'b-ok', 'Needs Treatment' => 'b-warn', 'Repairable' => 'b-info'][$qq] ?? 'b-err' }}">{{ $qq }}</span> @endforeach</td>
+        <td data-label="History">@if ($r->amc_client_id)<a class="btn gh sm" href="{{ route('amc.returns.history', ['client' => $r->amc_client_id, 'return' => $r->id]) }}" onclick="event.stopPropagation()" title="Every return of this customer, per Location and entry"><svg class="ico"><use href="#i-list"/></svg>History</a>@endif</td>
       </tr>
     @empty
-      <tr><td colspan="8"><div class="empty">{{ $q !== '' || $quality ? 'No entries match this search.' : 'No Return & Replace entries yet.' }}</div></td></tr>
+      <tr><td colspan="9"><div class="empty">{{ $q !== '' || $quality ? 'No entries match this search.' : 'No Return & Replace entries yet.' }}</div></td></tr>
     @endforelse
     </tbody>
   </table>

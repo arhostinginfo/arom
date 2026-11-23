@@ -94,3 +94,10 @@ table.amclist tr.c-red td.amcend{color:var(--error-700);font-weight:600}
 
 /* (24/11/2026) AMC Client Inventory: total amount of the customer */
 .amcinvtotal{text-align:right;padding:4px 2px}
+
+/* (24/11/2026) Return & Replace history: one block per entry; the entry / return opened from a link is marked */
+.amchentry{display:grid;gap:8px}
+.amchhd{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.amchentry.mark{outline:2px solid var(--warning-500, #f59e0b);outline-offset:6px;border-radius:6px}
+.amchist tr.mark td{background:var(--warning-50, #fffbeb)}
+.amchlink{font-size:12px;white-space:nowrap}

@@ -23,6 +23,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /** AMC › Return & Replace (21/11/2026): list paged, searched and filtered on the server (rule P1), the form, Download CSV. */
 class AmcReturnController extends Controller
 {
+    /** (24/11/2026) the History page's ?location= value for the rows with no Location */
+    public const NO_LOCATION = '(none)';
+
     public function __construct(private readonly AmcReturnService $returns)
     {
     }
@@ -63,6 +66,50 @@ class AmcReturnController extends Controller
     public function edit(AmcReturn $return): View
     {
         return $this->form($return);
+    }
+
+    /**
+     * (24/11/2026) The Return & Replace history of a customer: every Location, every entry of the AMC Client Inventory
+     * under it, and each time the entry was returned (newest first), with its dates, quantities, rate, amount and quality.
+     * Rows without an entry (or whose entry was removed from the inventory) are listed under their Location.
+     * ?location= shows one Location; ?line= and ?return= mark an entry / a return.
+     */
+    public function history(Request $request, AmcClient $client): View
+    {
+        $client->load(['lines.planter:id,name', 'lines.plant:id,name,size']);
+        $items = \App\Models\Amc\AmcReturnItem::query()
+            ->whereHas('return', fn ($q) => $q->where('amc_client_id', $client->id))
+            ->with(['return:id,amc_client_id,location_1,request_date,replace_date,gardener_id,return_remark', 'return.gardener:id,name', 'planter:id,name', 'plant:id,name'])
+            ->get()
+            ->sortByDesc(fn ($i) => $i->return->request_date?->format('Ymd').sprintf('%010d', $i->amc_return_id))->values();
+        $lineIds = $client->lines->pluck('id')->all();
+        $byLine = $items->filter(fn ($i) => in_array($i->amc_client_line_id, $lineIds, true))->groupBy('amc_client_line_id');
+        $other = $items->reject(fn ($i) => in_array($i->amc_client_line_id, $lineIds, true))->groupBy(fn ($i) => (string) $i->return->location_1);
+
+        // Locations in the inventory's order, then any Location only the returns have
+        $locs = [];
+        foreach ($client->lines->sortBy('line_no') as $l) {
+            $locs[(string) $l->location_1]['lines'][] = $l;
+        }
+        foreach ($other as $loc => $rs) {
+            $locs[(string) $loc]['other'] = $rs;
+        }
+        $all = array_keys($locs);
+        // (24/11/2026, test fix) an empty ?location= (the "All locations" option) shows every Location; the rows with no
+        // Location are picked with NO_LOCATION (an empty value used to show only them, as '' is their key)
+        $location = $request->query('location');
+        $location = $location === self::NO_LOCATION && array_key_exists('', $locs) ? '' : (is_string($location) && $location !== '' ? $location : null);
+        if ($location !== null && array_key_exists($location, $locs)) {
+            $locs = [$location => $locs[$location]];
+        } else {
+            $location = null;
+        }
+
+        return view('amc.returns.history', [
+            'client' => $client, 'locs' => $locs, 'allLocs' => $all, 'location' => $location, 'byLine' => $byLine,
+            'markLine' => $request->integer('line') ?: null, 'markReturn' => $request->integer('return') ?: null,
+            'returnCount' => $items->pluck('amc_return_id')->unique()->count(),
+        ]);
     }
 
     public function store(AmcReturnRequest $request): RedirectResponse

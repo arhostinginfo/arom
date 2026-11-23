@@ -3,7 +3,7 @@
 (function(){
 'use strict';
 var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s))};
-function esc(v){var d=document.createElement('div');d.textContent=v==null?'':String(v);return d.innerHTML}
+function esc(v){var d=document.createElement('div');d.textContent=v==null?'':String(v);return d.innerHTML.replace(/"/g,'&quot;').replace(/'/g,'&#39;')} // (24/11/2026) also safe inside attributes
 
 /* Dialogs: [data-open="#id"] shows the overlay, [data-x] or Escape hides it; [data-autoopen] opens on load. */
 var lastFocus=null;
@@ -144,7 +144,11 @@ if(rForm){
       type=$('#amc_type_id',rForm),gard=$('#gardener_id',rForm),note=$('#amcContractNote',rForm);
   var ensure=function(sel,id,label){if(!sel||!id)return;id=String(id);if(![].some.call(sel.options,function(o){return o.value===id})){var o=document.createElement('option');o.value=id;o.textContent=label||id;sel.appendChild(o)}};
   var sumEl=$('#amcLocSummary',rForm),badgeCls={done:'b-ok',open:'b-warn'};
-  var stCell=function(st){st=st||{state:'none',text:'Not replaced yet'};return '<td data-label="Replaced so far" data-state="'+esc(st.state)+'"><span class="badge '+(badgeCls[st.state]||'b-neu')+'">'+esc(st.text)+'</span></td>'};
+  // (24/11/2026) an entry returned before links to its history (a new tab, so the form stays as it is)
+  var histUrl=function(line){var u=box&&box.dataset.history;return u&&rc.value?u.replace('__C__',encodeURIComponent(rc.value))+'?line='+encodeURIComponent(line):''};
+  var stCell=function(st,line){st=st||{state:'none',text:'Not replaced yet'};var u=st.count>0?histUrl(line):'';
+    return '<td data-label="Replaced so far" data-state="'+esc(st.state)+'"><span class="badge '+(badgeCls[st.state]||'b-neu')+'">'+esc(st.text)+'</span>'+
+      (u?' <a class="amchlink" href="'+esc(u)+'" target="_blank" rel="noopener" data-history-link>History ('+esc(st.count)+')</a>':'')+'</td>'};
   // For the chosen Location: how many entries, how many replaced, open or not replaced yet.
   var summary=function(){
     if(!sumEl)return;
@@ -214,7 +218,7 @@ if(rForm){
   // (23/11/2026, retest) a row added or taken out is a change: tell the unsaved-changes guard (it listens for input on named fields)
   var touched=function(tr){var h=tr&&f(tr,'line');if(h)h.dispatchEvent(new Event('input',{bubbles:true}))};
   var dropRow=function(tr){if(tr&&tr.parentNode){touched(tr);tr.parentNode.removeChild(tr)}mark();calc()};
-  rows.addEventListener('click',function(e){var tr=e.target.closest('tr');if(tr&&!tr.hidden)addEntry(tr)});
+  rows.addEventListener('click',function(e){if(e.target.closest('a'))return;var tr=e.target.closest('tr');if(tr&&!tr.hidden)addEntry(tr)});
   items.addEventListener('click',function(e){var b=e.target.closest('[data-del-item]');if(b)dropRow(b.closest('tr'))});
   items.addEventListener('input',function(e){if(e.target.dataset.f==='qty'||e.target.dataset.f==='pqty')calc()});
   // A new Location: rows of the other Location go, after a yes.
@@ -243,7 +247,7 @@ if(rForm){
         tr.dataset.size=l.plant_size||'';tr.dataset.rate=l.plant_rate==null?'':l.plant_rate;
         tr.innerHTML='<td data-label="Location 2">'+esc(l.location_2)+
           '</td><td data-label="Planter">'+esc(l.planter)+'</td><td data-label="Planter qty" class="r num">'+esc(l.planter_qty)+'</td><td data-label="Plant">'+esc(l.plant)+
-          '</td><td data-label="Plant qty" class="r num">'+esc(l.plant_qty)+'</td>'+stCell(l.replaced)+'<td><button class="btn sec sm" type="button" data-add-entry>Add</button></td>';
+          '</td><td data-label="Plant qty" class="r num">'+esc(l.plant_qty)+'</td>'+stCell(l.replaced,l.id)+'<td><button class="btn sec sm" type="button" data-add-entry>Add</button></td>';
         rows.appendChild(tr);
       });
       box.dataset.locReturns=JSON.stringify(d.location_returns||{});

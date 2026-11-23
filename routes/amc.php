@@ -76,6 +76,7 @@ Route::middleware(['web', 'auth', 'active'])->prefix('amc')->name('amc.')->group
     $r = AmcReturnController::class;
     Route::get('returns', [$r, 'index'])->name('returns.index')->middleware('permission:amc-return.view');
     Route::get('returns/export', [$r, 'export'])->name('returns.export')->middleware(['permission:amc-return.view', 'throttle:downloads']);
+    Route::get('returns/history/{client}', [$r, 'history'])->name('returns.history')->middleware('permission:amc-return.view');
     Route::get('returns/create', [$r, 'create'])->name('returns.create')->middleware('permission:amc-return.add');
     Route::post('returns', [$r, 'store'])->name('returns.store')->middleware('permission:amc-return.add');
     Route::get('returns/{return}', [$r, 'edit'])->name('returns.edit')->middleware('permission:amc-return.view');

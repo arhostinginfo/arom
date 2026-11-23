@@ -21,6 +21,7 @@
 <div class="pagehd">
   <h1>{{ $isNew ? 'Return & Replace' : $r->number().' · '.$client?->name }}</h1>
   <span class="sp"></span>
+  @if (! $isNew && $r->amc_client_id)<a class="btn gh sm" href="{{ route('amc.returns.history', ['client' => $r->amc_client_id, 'return' => $r->id]) }}"><svg class="ico"><use href="#i-list"/></svg>History</a>@endif
   @if (! $isNew && $u->can('amc-return.add'))<a class="btn add sm" href="{{ route('amc.returns.create') }}"><svg class="ico"><use href="#i-plus"/></svg>Add new</a>@endif
   <a class="btn gh sm" href="{{ route('amc.returns.index') }}"><svg class="ico"><use href="#i-list"/></svg>Return &amp; Replace list</a>
 </div>
@@ -57,7 +58,7 @@
           <span class="hint txt">From the customer's lines in the AMC Client Inventory.</span>
           @include('partials.ferr', ['name' => 'location_1'])
         </div>
-        <div class="field" style="grid-column:1/-1" id="amcLocEntries" data-loc-returns='@json((object) ($replaced[''] ?? []))' @if (! $loc1) hidden @endif>
+        <div class="field" style="grid-column:1/-1" id="amcLocEntries" data-history="{{ route('amc.returns.history', '__C__') }}" data-loc-returns='@json((object) ($replaced[''] ?? []))' @if (! $loc1) hidden @endif>
           <span class="lbl">Entries under this Location</span>
           <p class="hint txt" id="amcLocSummary" aria-live="polite"></p>
           <div class="tablecard" style="overflow-x:auto">
@@ -73,7 +74,7 @@
                   <td data-label="Plant">{{ $l->plant?->label() }}</td>
                   <td data-label="Plant qty" class="r num">{{ $l->plant_qty }}</td>
                   @php($st = $replaced[$l->id] ?? \App\Services\Amc\AmcReturnService::statusOf([]))
-                  <td data-label="Replaced so far" data-state="{{ $st['state'] }}"><span class="badge {{ ['done' => 'b-ok', 'open' => 'b-warn'][$st['state']] ?? 'b-neu' }}">{{ $st['text'] }}</span></td>
+                  <td data-label="Replaced so far" data-state="{{ $st['state'] }}"><span class="badge {{ ['done' => 'b-ok', 'open' => 'b-warn'][$st['state']] ?? 'b-neu' }}">{{ $st['text'] }}</span>@if (($st['count'] ?? 0) > 0) <a class="amchlink" href="{{ route('amc.returns.history', ['client' => $client->id, 'line' => $l->id]) }}" target="_blank" rel="noopener" data-history-link>History ({{ $st['count'] }})</a>@endif</td>
                   <td><button class="btn sec sm" type="button" data-add-entry>{{ in_array((string) $l->id, $added, true) ? 'Added' : 'Add' }}</button></td>
                 </tr>
               @endforeach
