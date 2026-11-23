@@ -45,7 +45,7 @@ class AmcReturnReplacedStatusTest extends TestCase
         $this->assertSame(['Ceramic', 4, 5], [$info['lines'][0]['planter'] !== null ? 'Ceramic' : null, $info['lines'][0]['planter_qty'], $info['lines'][0]['plant_qty']]);
 
         // the edit page of the open request: every column, and the request itself is not counted for its own entry
-        $open = AmcReturn::where('amc_client_line_id', $l[1]->id)->first();
+        $open = AmcReturn::whereHas('items', fn ($q) => $q->where('amc_client_line_id', $l[1]->id))->first();
         $html = $this->actingAs($admin)->get(route('amc.returns.edit', $open))->assertOk()->getContent();
         foreach (['<th>Location 2</th>', '<th>Planter</th>', '<th class="r">Planter qty</th>', '<th>Plant</th>', '<th class="r">Plant qty</th>', '<th>Replaced so far</th>', 'id="amcLocSummary"'] as $s) {
             $this->assertStringContainsString($s, $html, $s);
@@ -64,12 +64,12 @@ class AmcReturnReplacedStatusTest extends TestCase
         $admin = $this->admin();
         $m = $this->amcMasters();
         $loc = "Tow'er \"A\" <b>x</b>";
-        $c = $this->amcClient('Smart Work', [['location_1' => $loc, 'location_2' => 'Floor 5'], ['location_1' => 'B', 'location_2' => 'Lobby']]);
+        $c = $this->amcClient('Smart Work', [['location_1' => $loc, 'location_2' => 'Floor 5', 'amc_plant_id' => $m['rose']->id, 'plant_qty' => 5], ['location_1' => 'B', 'location_2' => 'Lobby']]);
         $line = $c->lines()->orderBy('line_no')->first();
         $base = ['amc_client_id' => $c->id, 'amc_plant_id' => $m['rose']->id, 'quality' => 'Reusable', 'qty' => '1'];
         $this->actingAs($admin)->post(route('amc.returns.store'), $base + ['location_1' => $loc, 'amc_client_line_id' => $line->id, 'request_date' => '18/11/2026'])->assertSessionHasNoErrors();
         $this->actingAs($admin)->post(route('amc.returns.store'), $base + ['location_1' => $loc, 'request_date' => '19/11/2026'])->assertSessionHasNoErrors();
-        $r = AmcReturn::where('amc_client_line_id', $line->id)->firstOrFail();
+        $r = AmcReturn::whereHas('items', fn ($q) => $q->where('amc_client_line_id', $line->id))->firstOrFail();
 
         // the edit page asks the customer info without its own return; the create page without any
         $html = $this->actingAs($admin)->get(route('amc.returns.edit', $r))->assertOk()->getContent();

@@ -447,27 +447,30 @@ class AmcEndToEndTest extends TestCase
         $this->assertSame(['Tower A · Floor 5 - Lobby', 'Tower A', 'Floor 5 - Lobby'], [$info['lines'][0]['label'], $info['lines'][0]['location_1'], $info['lines'][0]['location_2']]);
         $this->assertSame([$swNow->id, $m['indoor'], 'Indoor maintenance', $gopal->id], [$info['contract']['id'], $info['contract']['amc_type_id'], $info['contract']['type'], $info['contract']['gardener_id']]);
         $rf = $this->actingAs($admin)->get(route('amc.returns.create'))->assertOk()->getContent();
-        $this->assertSame(['Select', 'Reusable', 'Needs Treatment', 'Repairable', 'Dead'], $this->selectOptions($rf, 'quality'));
-        $this->assertMatchesRegularExpression('/<option value="'.$m['money'].'" data-size="2 ft"/', $rf);
+        // (23/11/2026) quality on each row; the plant size from the Plant master comes with the customer's entries
+        $this->assertMatchesRegularExpression('#name="items\[__N__\]\[quality\]"[^>]*>\s*<option value="">Select</option>\s*<option\s*>Reusable</option><option\s*>Needs Treatment</option><option\s*>Repairable</option><option\s*>Dead</option>#', $rf);
+        $this->assertSame('2 ft', $info['lines'][0]['plant_size']);
         $this->assertStringContainsString('id="request_date" name="request_date" value="21/11/2026"', $rf);
 
         $ret = ['amc_client_id' => $sw->id, 'amc_client_line_id' => $l1->id, 'request_date' => '20/11/2026', 'replace_date' => '21/11/2026', 'reported_by_id' => $anil->id,
             'amc_type_id' => $m['indoor'], 'amc_plant_id' => $m['money'], 'qty' => '2', 'rate' => '150', 'gardener_id' => $gopal->id, 'return_remark' => 'Leaves yellow', 'quality' => 'Needs Treatment'];
-        $this->actingAs($admin)->post(route('amc.returns.store'), array_merge($ret, ['amc_client_line_id' => $rn->lines()->value('id')]))->assertSessionHasErrors(['amc_client_line_id' => 'Choose a location of this customer.']);
-        $this->actingAs($admin)->post(route('amc.returns.store'), array_merge($ret, ['quality' => 'Bad']))->assertSessionHasErrors('quality');
+        $this->actingAs($admin)->post(route('amc.returns.store'), array_merge($ret, ['amc_client_line_id' => $rn->lines()->value('id')]))->assertSessionHasErrors(['items.0.amc_client_line_id' => 'Choose an entry of this customer.']);
+        $this->actingAs($admin)->post(route('amc.returns.store'), array_merge($ret, ['quality' => 'Bad']))->assertSessionHasErrors('items.0.quality');
         $this->actingAs($admin)->post(route('amc.returns.store'), array_merge($ret, ['replace_date' => '19/11/2026']))->assertSessionHasErrors('replace_date');
-        $this->actingAs($admin)->post(route('amc.returns.store'), array_merge($ret, ['qty' => '0']))->assertSessionHasErrors('qty');
+        $this->actingAs($admin)->post(route('amc.returns.store'), array_merge($ret, ['qty' => '0']))->assertSessionHasErrors('items.0.plant_qty');
         $this->assertSame(0, AmcReturn::count());
+        \App\Models\Amc\AmcPlant::whereKey($m['money'])->update(['rate' => '150']); // (23/11/2026) the row's rate comes from the Plant master
         $this->actingAs($admin)->post(route('amc.returns.store'), $ret)->assertRedirect()->assertSessionHasNoErrors();
         $this->actingAs($admin)->post(route('amc.returns.store'), array_merge($ret, ['amc_client_id' => $rn->id, 'amc_client_line_id' => $rn->lines()->value('id'), 'amc_plant_id' => $m['rose'],
             'qty' => '1', 'rate' => '', 'gardener_id' => $suresh->id, 'amc_type_id' => $m['outdoor'], 'quality' => 'Dead', 'replace_date' => '']))->assertSessionHasNoErrors();
         [$r1, $r2] = AmcReturn::orderBy('id')->get()->all();
-        $this->assertSame(['RR-0001', 'Tower A', 'Floor 5 - Lobby', '2 ft', 'Needs Treatment', 2, '150.00'], [$r1->number(), $r1->location_1, $r1->location_2, $r1->plant_size, $r1->quality, $r1->qty, $r1->rate]);
-        $this->assertSame(['ASTP', null, '5 ft', 'Dead', null], [$r2->location_1, $r2->location_2, $r2->plant_size, $r2->quality, $r2->replace_date]);
-        $this->actingAs($admin)->get(route('amc.returns.edit', $r1))->assertOk()->assertSee('selected>Floor 5 - Lobby</option>', false)->assertSee('value="2 ft"', false);
+        [$i1, $i2] = [$r1->items->first(), $r2->items->first()]; // (23/11/2026) on the rows
+        $this->assertSame(['RR-0001', 'Tower A', 'Floor 5 - Lobby', '2 ft', 'Needs Treatment', 2, '150.00'], [$r1->number(), $r1->location_1, $i1->location_2, $i1->plant_size, $i1->quality, $i1->plant_qty, $i1->rate]);
+        $this->assertSame(['ASTP', null, '5 ft', 'Dead', null], [$r2->location_1, $i2->location_2, $i2->plant_size, $i2->quality, $r2->replace_date]);
+        $this->actingAs($admin)->get(route('amc.returns.edit', $r1))->assertOk()->assertSee('<span data-f="l2">Floor 5 - Lobby</span>', false)->assertSee('<span data-f="size">2 ft</span>', false);
         // Edit: quality changes.
         $this->actingAs($admin)->put(route('amc.returns.update', $r1), array_merge($ret, ['quality' => 'Reusable']))->assertSessionHasNoErrors();
-        $this->assertSame('Reusable', $r1->fresh()->quality);
+        $this->assertSame('Reusable', $r1->fresh()->items->first()->quality);
         // (One page view uses up the "saved" message, which also names RR-0001.)
         $this->actingAs($admin)->get(route('amc.returns.index'))->assertOk()->assertSee('RR-0001')->assertSee('RR-0002');
 
@@ -475,7 +478,7 @@ class AmcEndToEndTest extends TestCase
         $this->actingAs($admin)->get(route('amc.returns.index', ['quality' => 'Reusable']))->assertOk()->assertSee('RR-0001')->assertDontSee('RR-0002');
         $rcsv = $this->csvRows($this->actingAs($admin)->get(route('amc.returns.export'))->assertOk()->streamedContent());
         $this->assertCount(3, $rcsv);
-        $this->assertSame(['RR-0001', 'Smart Work', 'Tower A', 'Floor 5 - Lobby', '20/11/2026', '21/11/2026', 'Anil Manager', 'Indoor maintenance', 'Money Plant', '2 ft', '2', '150.00', 'Gopal Gardener', 'Leaves yellow', 'Reusable'], $rcsv[1]);
+        $this->assertSame(['RR-0001', 'Smart Work', 'Tower A', 'Floor 5 - Lobby', '20/11/2026', '21/11/2026', 'Anil Manager', 'Indoor maintenance', '', '', 'Money Plant', '2 ft', '2', '150.00', '300.00', 'Gopal Gardener', 'Leaves yellow', 'Reusable'], $rcsv[1]);
 
         // A master in use by Return & Replace cannot be deleted either.
         $this->actingAs($admin)->delete(route('amc.masters.types.destroy', $m['outdoor']))->assertSessionHasErrors('delete');

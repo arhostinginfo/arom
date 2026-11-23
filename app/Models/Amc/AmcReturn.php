@@ -44,6 +44,12 @@ class AmcReturn extends Model
         return $this->belongsTo(AmcPlant::class, 'amc_plant_id');
     }
 
+    /** (23/11/2026) The rows: one per entry of the Location (planter, plant, quantities and rate). */
+    public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AmcReturnItem::class, 'amc_return_id')->orderBy('line_no')->orderBy('id');
+    }
+
     public function gardener(): BelongsTo
     {
         return $this->belongsTo(AmcEmployee::class, 'gardener_id');

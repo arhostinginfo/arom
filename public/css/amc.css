@@ -86,6 +86,8 @@ table.amclist tr.c-red td.amcend{color:var(--error-700);font-weight:600}
 #amcLocRows tr[hidden]{display:none}
 /* The entries box itself is a .field (display:grid), which also beat [hidden]: it showed, empty, before a Location was chosen. */
 #amcLocEntries[hidden]{display:none}
+/* (23/11/2026, retest) "No rows yet" is a .hint.txt (display:block), which also beat [hidden]: it showed beside the rows. */
+#amcItemsEmpty[hidden]{display:none}
 
 /* Return & Replace (22/11/2026): the entry picked in Location 2 (entry) is marked in the table. */
 #amcLocRows tr.sel td{background:var(--primary-50);font-weight:600}

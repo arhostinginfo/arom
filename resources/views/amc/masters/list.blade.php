@@ -38,7 +38,7 @@
         @forelse ($rows as $r)
           <tr class="{{ $editing && $editing->id === $r->id ? 'sel' : '' }}">
             <td data-label="Name" class="wide"><b>{{ $r->name }}</b></td>
-            @foreach ($cfg['fields'] as $f => $field)@if ($f !== 'name')<td data-label="{{ $field['label'] }}">{{ $r->{$f} }}</td>@endif @endforeach
+            @foreach ($cfg['fields'] as $f => $field)@if ($f !== 'name')<td data-label="{{ $field['label'] }}" @class(['r num' => ! empty($field['money'])])>{{ ! empty($field['money']) && $r->{$f} !== null ? \App\Support\Money::indian($r->{$f}, 2) : $r->{$f} }}</td>@endif @endforeach
             <td data-label="Active"><span class="badge {{ $r->is_active ? 'b-ok' : 'b-neu' }}">{{ $r->is_active ? 'Yes' : 'No' }}</span></td>
             <td class="r" style="white-space:nowrap">
               @can($p.'.edit')<a class="btn gh sm" href="{{ request()->fullUrlWithQuery(['edit' => $r->id]) }}#mform" aria-label="Edit {{ $r->label() }}"><svg class="ico"><use href="#i-pen"/></svg>Edit</a>@endcan
@@ -67,7 +67,7 @@
       @foreach ($cfg['fields'] as $f => $field)
         <div class="field">
           <label for="{{ $f }}">{{ $field['label'] }}@if (empty($field['optional']))<span class="req">*</span>@endif</label>
-          <input class="inp @error($f) err @enderror" id="{{ $f }}" name="{{ $f }}" value="{{ old($f, $editing?->{$f}) }}" maxlength="{{ $field['max'] }}" @if (empty($field['optional'])) required @endif>
+          <input class="inp @error($f) err @enderror" id="{{ $f }}" name="{{ $f }}" value="{{ old($f, ! empty($field['money']) && $editing?->{$f} !== null ? rtrim(rtrim((string) $editing->{$f}, '0'), '.') : $editing?->{$f}) }}" maxlength="{{ $field['max'] }}" @if (! empty($field['money'])) inputmode="decimal" @endif @if (empty($field['optional'])) required @endif>
           @include('partials.ferr', ['name' => $f])
         </div>
       @endforeach

@@ -7,6 +7,11 @@ class AmcPlant extends AmcMaster
 {
     protected $table = 'amc_plants';
 
+    protected function casts(): array
+    {
+        return parent::casts() + ['rate' => 'decimal:2'];
+    }
+
     public function label(): string
     {
         return $this->size ? $this->name.' ('.$this->size.')' : $this->name;

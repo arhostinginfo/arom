@@ -39,6 +39,11 @@
             </select>
           </div>
           <span class="hint txt">Active customers of the Party master (Admin › Masters › Parties).@if (! $isNew && ! $client->party_id) Not linked yet: was "{{ $client->name }}".@endif</span>
+          {{-- (23/11/2026) Nothing to pick: say why and where to add the customer, rather than an empty list. --}}
+          @if ($noParty ?? false)
+            <span class="hint txt" id="amcNoParty" role="status" style="color:var(--warning-700)">No customer to choose: every active customer of the Party master is already in the AMC Client Inventory.
+              @can('masters.add')<a href="{{ route('admin.parties.create') }}">Add the customer in the Party master</a> (type Customer or Both, status Active), then come back to this page.@else Ask an admin to add the customer in the Party master.@endcan</span>
+          @endif
           @include('partials.ferr', ['name' => 'party_id'])
           @include('partials.ferr', ['name' => 'name'])
         </div>

@@ -66,15 +66,16 @@ class AmcLocationGroupTest extends TestCase
 
         // a Location only: saved without Location 2
         $this->actingAs($admin)->post(route('amc.returns.store'), $base + ['location_1' => 'Tower B'])->assertSessionHasNoErrors();
-        $this->assertSame(['Tower B', null, null], [AmcReturn::first()->location_1, AmcReturn::first()->location_2, AmcReturn::first()->amc_client_line_id]);
+        $first = AmcReturn::first();
+        $this->assertSame(['Tower B', null, null], [$first->location_1, $first->items->first()->location_2, $first->items->first()->amc_client_line_id]);
         // a Location and an entry under it
         $this->actingAs($admin)->post(route('amc.returns.store'), $base + ['location_1' => 'Tower A', 'amc_client_line_id' => $l[1]->id])->assertSessionHasNoErrors();
         $r = AmcReturn::latest('id')->first();
-        $this->assertSame(['Tower A', 'Floor 6'], [$r->location_1, $r->location_2]);
+        $this->assertSame(['Tower A', 'Floor 6'], [$r->location_1, $r->items->first()->location_2]);
         // refused: a Location the customer does not have, an entry under another Location
         $this->actingAs($admin)->post(route('amc.returns.store'), $base + ['location_1' => 'Tower Z'])->assertSessionHasErrors(['location_1' => 'Choose a Location of this customer.']);
         $this->actingAs($admin)->post(route('amc.returns.store'), $base + ['location_1' => 'Tower B', 'amc_client_line_id' => $l[0]->id])
-            ->assertSessionHasErrors(['amc_client_line_id' => 'Pick an entry under the chosen Location.']);
+            ->assertSessionHasErrors(['items.0.amc_client_line_id' => 'This entry is not under the chosen Location.']);
 
         // the edit page (no old input from the refused saves above): the Location list, its entries, the picked one checked
         $this->flushSession();
@@ -82,11 +83,13 @@ class AmcLocationGroupTest extends TestCase
         $this->assertStringContainsString('<label for="amc_location_1">Location</label>', $html);
         $this->assertStringContainsString('<option selected>Tower A</option>', $html);
         $this->assertStringContainsString('<option >Tower B</option>', str_replace('<option>', '<option >', $html));
-        $this->assertMatchesRegularExpression('/<tr data-id="\d+" data-l1="Tower A" data-l2="Floor 5"[^>]*>/', $html);
-        $this->assertMatchesRegularExpression('/<tr data-id="\d+" data-l1="Tower B" data-l2="Lobby" data-no="3" data-plant=""[^>]*\shidden\s*>/', $html);
-        $this->assertStringContainsString('<option value="'.$l[1]->id.'" selected>Floor 6</option>', $html);
+        $this->assertMatchesRegularExpression('/<tr class="clk" data-id="\d+" data-l1="Tower A" data-l2="Floor 5"[^>]*>/', $html);
+        $this->assertMatchesRegularExpression('/<tr class="clk" data-id="\d+" data-l1="Tower B" data-l2="Lobby" data-no="3"[^>]*\shidden\s*>/', $html);
+        // (23/11/2026) the picked entry is a row of the return, and marked in the entries
+        $this->assertStringContainsString('name="items[0][amc_client_line_id]" value="'.$l[1]->id.'"', $html);
+        $this->assertStringContainsString('<span data-f="l2">Floor 6</span>', $html);
         $this->assertStringNotContainsString('type="radio"', $html);
-        $this->assertMatchesRegularExpression('/<tr data-id="'.$l[1]->id.'"[^>]*class="sel"/', $html);
+        $this->assertMatchesRegularExpression('/<tr class="clk sel" data-id="'.$l[1]->id.'"/', $html);
         $this->assertSame('Rose (5 ft)', collect($this->actingAs($admin)->getJson(route('amc.clients.info', $c))->json('lines'))->first()['plant'] ?? 'Rose (5 ft)');
         $this->assertSame($m['rose']->id, $this->actingAs($admin)->getJson(route('amc.clients.info', $c))->json('lines.0.plant_id'));
     }

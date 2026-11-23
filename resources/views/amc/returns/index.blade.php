@@ -27,7 +27,7 @@
     <thead><tr>
       @include('partials.sorth', ['label' => 'Entry no', 'key' => 'added'])
       @include('partials.sorth', ['label' => 'Request date', 'key' => 'request'])
-      <th>Customer</th><th>Location</th><th>Plant</th><th class="r">Qty</th><th>Replace date</th><th>Quality</th>
+      <th>Customer</th><th>Location</th><th>Rows</th><th class="r">Qty</th><th>Replace date</th><th>Quality</th>
     </tr></thead>
     <tbody>
     @forelse ($rows as $r)
@@ -35,11 +35,11 @@
         <td data-label="Entry no" class="num"><a class="rowlink" href="{{ route('amc.returns.edit', $r) }}"><b>{{ $r->number() }}</b></a></td>
         <td data-label="Request date" class="num">{{ $r->request_date?->format($df) }}</td>
         <td data-label="Customer" class="wide">{{ $r->client?->name }}</td>
-        <td data-label="Location">{{ implode(' · ', array_filter([$r->location_1, $r->location_2])) }}</td>
-        <td data-label="Plant">{{ $r->plant?->name }}{{ $r->plant_size ? ' ('.$r->plant_size.')' : '' }}</td>
-        <td data-label="Qty" class="r num">{{ \App\Support\Money::indian($r->qty) }}</td>
+        <td data-label="Location">{{ $r->location_1 }}</td>
+        <td data-label="Rows">@foreach ($r->items as $i)<div>{{ $i->summary() }}</div>@endforeach</td>
+        <td data-label="Qty" class="r num">{{ \App\Support\Money::indian($r->items->sum(fn ($i) => $i->qty())) }}</td>
         <td data-label="Replace date" class="num">{{ $r->replace_date?->format($df) }}</td>
-        <td data-label="Quality"><span class="badge {{ $r->qualityBadge() }}">{{ $r->quality }}</span></td>
+        <td data-label="Quality">@foreach ($r->items->pluck('quality')->filter()->unique() as $qq)<span class="badge {{ ['Reusable' => 'b-ok', 'Needs Treatment' => 'b-warn', 'Repairable' => 'b-info'][$qq] ?? 'b-err' }}">{{ $qq }}</span> @endforeach</td>
       </tr>
     @empty
       <tr><td colspan="8"><div class="empty">{{ $q !== '' || $quality ? 'No entries match this search.' : 'No Return & Replace entries yet.' }}</div></td></tr>

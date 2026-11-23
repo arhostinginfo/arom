@@ -116,7 +116,7 @@ class AmcReviewFixesTest extends TestCase
         // a gardener who has since become inactive may stay on the entry they are already on
         $gardener->update(['status' => 'Inactive']);
         $this->actingAs($admin)->put(route('amc.returns.update', $r), array_merge($base, ['gardener_id' => $gardener->id, 'qty' => '2']))->assertSessionHasNoErrors();
-        $this->assertSame(2, $r->fresh()->qty);
+        $this->assertSame(2, $r->fresh()->items->first()->plant_qty);
         // without a gardener is still allowed
         $this->actingAs($admin)->post(route('amc.returns.store'), $base)->assertSessionHasNoErrors();
     }

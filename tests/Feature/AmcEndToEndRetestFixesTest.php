@@ -33,13 +33,13 @@ class AmcEndToEndRetestFixesTest extends TestCase
         $this->actingAs($admin)->post(route('amc.returns.store'), $base + ['location_1' => 'Tower A', 'amc_client_line_id' => $lineA->id])
             ->assertSessionHasNoErrors();
         $r = AmcReturn::firstOrFail();
-        $this->assertSame([$lineA->id, 'Tower A', 'Floor 1'], [$r->amc_client_line_id, $r->location_1, $r->location_2]);
+        $this->assertSame([$lineA->id, 'Tower A', 'Floor 1'], [$r->items->first()->amc_client_line_id, $r->location_1, $r->items->first()->location_2]);
 
         // Location changed to Tower B, no entry picked: the field is simply missing from the request.
         $this->actingAs($admin)->put(route('amc.returns.update', $r), $base + ['location_1' => 'Tower B'])
             ->assertSessionHasNoErrors()->assertRedirect(route('amc.returns.edit', $r));
         $r->refresh();
-        $this->assertSame([null, 'Tower B', null], [$r->amc_client_line_id, $r->location_1, $r->location_2]);
+        $this->assertSame([null, 'Tower B', null], [$r->items->first()->amc_client_line_id, $r->location_1, $r->items->first()->location_2]);
     }
 
     /**

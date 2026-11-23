@@ -106,11 +106,14 @@ class AmcClientController extends Controller
      */
     public function info(Request $request, AmcClient $client): JsonResponse
     {
-        $client->load(['vertical:id,name', 'gardener:id,name,code,role,status', 'lines.planter:id,name', 'lines.plant:id,name,size', 'activeContract.type:id,name', 'activeContract.gardener:id,name,code']);
+        $client->load(['vertical:id,name', 'gardener:id,name,code,role,status', 'lines.planter:id,name', 'lines.plant:id,name,size,rate', 'activeContract.type:id,name', 'activeContract.gardener:id,name,code']);
         $c = $client->activeContract;
         // (23/11/2026, test fix) the Return & Replace edit page leaves out the return being edited, also when the customer is re-picked
         $done = \App\Services\Amc\AmcReturnService::replaceStatus($client->id, $request->integer('except') ?: null);
         $none = \App\Services\Amc\AmcReturnService::statusOf([]);
+        // (24/11/2026, e2e fix) on that edit page an entry with a saved row shows the row's saved size and rate (kept on save)
+        $saved = \App\Services\Amc\AmcReturnService::savedRows($request->integer('except') ?: null, $client->id);
+        $sv = fn (AmcClientLine $l) => $saved->get(\App\Services\Amc\AmcReturnService::keptKey($l->id, $l->amc_plant_id));
         // (22/11/2026, test fix) only an active Gardener is offered to a new contract / Return & Replace: one made
         // Inactive or given another role since would be filled in and then refused on save.
         $g = $client->gardener;
@@ -124,7 +127,9 @@ class AmcClientController extends Controller
             'gardener_id' => $g?->id, 'gardener' => $g?->label(),
             'lines' => $client->lines->map(fn (AmcClientLine $l) => [
                 'id' => $l->id, 'line_no' => $l->line_no, 'label' => $l->locationLabel(), 'location_1' => $l->location_1, 'location_2' => $l->location_2,
-                'planter' => $l->planter?->name, 'planter_qty' => $l->planter_qty, 'plant' => $l->plant?->label(), 'plant_id' => $l->amc_plant_id, 'plant_qty' => $l->plant_qty,
+                'planter' => $l->planter?->name, 'planter_id' => $l->amc_planter_id, 'planter_qty' => $l->planter_qty, 'plant' => $l->plant?->label(), 'plant_id' => $l->amc_plant_id, 'plant_qty' => $l->plant_qty,
+                // (23/11/2026) for the Return & Replace row: the plant's name, size and rate from the Plant master
+                'plant_name' => $l->plant?->name, 'plant_size' => $sv($l) ? $sv($l)->plant_size : $l->plant?->size, 'plant_rate' => $sv($l) ? $sv($l)->rate : $l->plant?->rate,
                 'replaced' => $done[$l->id] ?? $none,
             ])->values(),
             // (23/11/2026) returns made for a Location without picking an entry, per Location
@@ -152,6 +157,8 @@ class AmcClientController extends Controller
             'planters' => AmcPlanter::query()->where(fn ($w) => $w->where('is_active', true)->orWhereIn('id', $keepPlanters))->orderBy('name')->get(),
             // (22/11/2026) Customer name: active customers of the Party master not yet in the AMC Client Inventory
             'parties' => AmcLookupController::options($parties, $party, fn ($p) => $p->name),
+            // (23/11/2026) no free active customer left (and none kept by this client): the page says so
+            'noParty' => ! $client->party_id && ! (clone $parties)->exists(),
             'gardeners' => AmcLookupController::options(AmcEmployee::forPicker(AmcEmployee::GARDENER, $gardener), $gardener, fn ($e) => $e->label()),
             'plants' => AmcPlant::query()->where(fn ($w) => $w->where('is_active', true)->orWhereIn('id', $keepPlants))->orderBy('name')->get(),
             'history' => ActivityLog::history($client),

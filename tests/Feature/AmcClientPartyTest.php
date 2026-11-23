@@ -89,4 +89,22 @@ class AmcClientPartyTest extends TestCase
         $this->assertSame('Rich Next', $c->name);
         $this->assertNotNull($c->party_id);
     }
+
+    /** (23/11/2026) Every active customer already in the AMC Client Inventory: the page says so and where to add one. */
+    public function test_no_free_customer_says_where_to_add_one(): void
+    {
+        $admin = $this->admin();
+        $c = $this->amcClient('Only One');
+        \App\Models\Party::whereKeyNot($c->party_id)->forceDelete(); // the fixtures add sample parties: keep only the client's
+
+        $this->actingAs($admin)->get(route('amc.clients.create'))->assertOk()
+            ->assertSee('id="amcNoParty"', false)->assertSee(route('admin.parties.create'), false);
+        // the client that has the customer does not get the message on its edit page
+        $this->actingAs($admin)->get(route('amc.clients.edit', $c))->assertOk()->assertDontSee('id="amcNoParty"', false);
+
+        // a new active customer: offered, no message
+        $this->amcParty('New Customer Ltd');
+        $this->actingAs($admin)->get(route('amc.clients.create'))->assertOk()
+            ->assertDontSee('id="amcNoParty"', false)->assertSee('>New Customer Ltd<', false);
+    }
 }
