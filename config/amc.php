@@ -11,10 +11,10 @@ return [
     // Permission group "AMC" on Admin › Access rights, in the order of the AMC menu. Actions as in config('nursery.actions').
     'pages' => [
         'amc-dashboard' => ['label' => 'AMC dashboard', 'actions' => ['view']],
-        'amc-client' => ['label' => 'AMC Client Master', 'actions' => ['view', 'add', 'edit']],
+        'amc-client' => ['label' => 'AMC Client Inventory', 'actions' => ['view', 'add', 'edit']],
         // Import has its own row so the four columns of Access rights stay the same for every module.
-        'amc-client-import' => ['label' => 'AMC Client Master · Import', 'actions' => ['add'], 'note' => 'Add = may import clients from a CSV file'],
-        'amc-contract' => ['label' => 'Customer PO / AMC and AMC list', 'actions' => ['view', 'add', 'edit', 'delete'], 'note' => 'Delete = delete a contract or one of its files'],
+        'amc-client-import' => ['label' => 'AMC Client Inventory · Import', 'actions' => ['add'], 'note' => 'Add = may import clients from a CSV file'],
+        'amc-contract' => ['label' => 'AMC Tracker and AMC Report', 'actions' => ['view', 'add', 'edit', 'delete'], 'note' => 'Delete = delete a contract or one of its files'],
         'amc-return' => ['label' => 'Return & Replace', 'actions' => ['view', 'add', 'edit', 'delete']],
         'amc-vertical' => ['label' => 'Business segment (Vertical) master', 'actions' => ['view', 'add', 'edit', 'delete']],
         'amc-planter' => ['label' => 'Planter master', 'actions' => ['view', 'add', 'edit', 'delete']],
@@ -24,17 +24,14 @@ return [
     ],
 
     // Top menu "AMC", placed before Admin. Each page is hidden from users without its View right.
-    'nav' => ['group' => 'Modules', 'key' => 'amc', 'icon' => 'sun', 'title' => 'AMC', 'subs' => [
+    // (22/11/2026) The AMC list is the "AMC Report" of the AMC reports (below), no longer a menu page.
+    'nav' => ['group' => 'Modules', 'key' => 'amc', 'icon' => 'sun', 'title' => 'AMC', 'reports' => 'AMC', 'subs' => [
         ['title' => 'Dashboard', 'perm' => 'amc-dashboard.view', 'route' => 'amc.dashboard', 'match' => 'amc.dashboard'],
-        ['title' => 'AMC Client Master', 'perm' => 'amc-client.view', 'route' => 'amc.clients.index', 'match' => 'amc.clients.*'],
-        ['title' => 'Customer PO / AMC', 'perm' => 'amc-contract.view', 'route' => 'amc.contract.index', 'match' => 'amc.contract.*'],
-        ['title' => 'AMC list', 'perm' => 'amc-contract.view', 'route' => 'amc.contracts.list', 'match' => 'amc.contracts.*'],
+        ['title' => 'AMC Client Inventory', 'perm' => 'amc-client.view', 'route' => 'amc.clients.index', 'match' => 'amc.clients.*'],
+        ['title' => 'AMC Tracker', 'perm' => 'amc-contract.view', 'route' => 'amc.contract.index', 'match' => 'amc.contract.*'],
         ['title' => 'Return & Replace', 'perm' => 'amc-return.view', 'route' => 'amc.returns.index', 'match' => 'amc.returns.*'],
-        ['title' => 'Business segment master', 'perm' => 'amc-vertical.view', 'route' => 'amc.masters.verticals.index', 'match' => 'amc.masters.verticals.*'],
-        ['title' => 'Planter master', 'perm' => 'amc-planter.view', 'route' => 'amc.masters.planters.index', 'match' => 'amc.masters.planters.*'],
-        ['title' => 'Plant master', 'perm' => 'amc-plant.view', 'route' => 'amc.masters.plants.index', 'match' => 'amc.masters.plants.*'],
-        ['title' => 'AMC type master', 'perm' => 'amc-type.view', 'route' => 'amc.masters.types.index', 'match' => 'amc.masters.types.*'],
-        ['title' => 'AMC Employee master', 'perm' => 'amc-employee.view', 'route' => 'amc.employees.index', 'match' => 'amc.employees.*'],
+        // (22/11/2026) The five masters are one menu item: the Masters page lists them, and tabs on each master move between them.
+        ['title' => 'Masters', 'perm' => 'amc-masters.view', 'route' => 'amc.masters.home', 'match' => ['amc.masters.*', 'amc.employees.*']],
     ]],
 
     /*
@@ -55,6 +52,12 @@ return [
             'used' => ['amc_contracts.amc_type_id', 'amc_returns.amc_type_id'], 'hint' => 'The kinds of maintenance contract.',
             'fields' => ['name' => ['label' => 'Name', 'max' => 100]]],
     ],
+
+    // (22/11/2026) AMC reports, added to config('nursery.reports', 'report_routes', 'report_perms') by AmcServiceProvider:
+    // they show under the AMC menu and on Reports, like the CRM and Sales reports.
+    'reports' => ['AMC Report'],
+    'report_routes' => ['reports.amc.report'],
+    'report_perm' => 'amc-contract.view',
 
     // Fixed lists (no table).
     'billing_cycles' => ['Monthly', 'Quarterly', 'Half-yearly', 'Yearly'],

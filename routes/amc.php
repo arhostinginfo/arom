@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['web', 'auth', 'active'])->prefix('amc')->name('amc.')->group(function () {
     Route::get('dashboard', AmcDashboardController::class)->name('dashboard')->middleware('permission:amc-dashboard.view');
 
+    // (22/11/2026) Masters page: the AMC masters the user may view, with their counts.
+    Route::get('masters', [AmcMasterController::class, 'home'])->name('masters.home')->middleware('can:amc-masters.view');
+
     // Simple masters: each its own route names (amc.masters.<key>.*), one shared controller and screen.
     foreach (config('amc.masters') as $key => $cfg) {
         $p = $cfg['perm'];
@@ -52,7 +55,8 @@ Route::middleware(['web', 'auth', 'active'])->prefix('amc')->name('amc.')->group
 
     // Type-ahead pickers.
     Route::get('lookup/clients', [AmcLookupController::class, 'clients'])->name('lookup.clients')->middleware('permission:amc-contract.view|amc-return.view|amc-client.view');
-    Route::get('lookup/employees', [AmcLookupController::class, 'employees'])->name('lookup.employees')->middleware('permission:amc-contract.view|amc-return.view|amc-employee.view');
+    Route::get('lookup/parties', [AmcLookupController::class, 'parties'])->name('lookup.parties')->middleware('permission:amc-client.add|amc-client.edit');
+    Route::get('lookup/employees', [AmcLookupController::class, 'employees'])->name('lookup.employees')->middleware('permission:amc-contract.view|amc-return.view|amc-employee.view|amc-client.add|amc-client.edit');
 
     // Customer PO / AMC (amc.contract.*: the entry page) and the AMC list (amc.contracts.*), so the menu marks the right one.
     $k = AmcContractController::class;
@@ -78,3 +82,8 @@ Route::middleware(['web', 'auth', 'active'])->prefix('amc')->name('amc.')->group
     Route::put('returns/{return}', [$r, 'update'])->name('returns.update')->middleware('permission:amc-return.edit');
     Route::delete('returns/{return}', [$r, 'destroy'])->name('returns.destroy')->middleware('permission:amc-return.delete');
 });
+
+// (22/11/2026, test fix) The AMC Report under Reports: the same page as amc.contracts.list, named reports.* like the
+// CRM and Sales reports so the menu marks Reports when it is opened from there, and AMC when opened with ?in=amc.
+Route::middleware(['web', 'auth', 'active'])->get('reports/amc/amc-report', [AmcContractController::class, 'list'])
+    ->name('reports.amc.report')->middleware('permission:amc-contract.view');

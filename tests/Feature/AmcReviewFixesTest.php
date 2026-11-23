@@ -53,7 +53,7 @@ class AmcReviewFixesTest extends TestCase
         $off = $this->amcContract($this->amcClient('Inactive One'), ['end_date' => today()->addDays(20), 'status' => 'Inactive']);
 
         $dash = $this->actingAs($admin)->get(route('amc.dashboard'))->assertOk()->getContent();
-        $this->assertStringContainsString(e(route('amc.contracts.list', ['renewal' => 1])).'" data-tile="renewals"', $dash);
+        $this->assertStringContainsString(e(route('reports.amc.report', ['renewal' => 1, 'in' => 'amc'])).'" data-tile="renewals"', $dash);
 
         $list = $this->actingAs($admin)->get(route('amc.contracts.list', ['renewal' => 1]))->assertOk()->getContent();
         foreach (['Ten Days', 'Forty Five', 'Sixty Days'] as $name) {

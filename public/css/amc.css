@@ -61,3 +61,31 @@ table.amclist tr.c-red td.amcend{color:var(--error-700);font-weight:600}
   .amcperson{flex-wrap:wrap}
   .amcclient .tablecard{overflow-x:auto}
 }
+
+/* AMC masters (22/11/2026): the Masters page cards and the tabs between masters. */
+.amcmasters{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.amcmcard{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:16px;text-decoration:none;color:inherit;min-height:44px}
+.amcmcard:hover,.amcmcard:focus-visible{border-color:var(--primary-600)}
+.amcmcard .t{font-weight:600}
+.amcmcard .d{grid-column:1/-1;font-size:var(--fs-small);color:var(--text-muted)}
+.amcmtabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);margin-bottom:12px}
+
+/* AMC list (22/11/2026): the Status column (colour and status) beside the AMC no. */
+.amccol{white-space:nowrap}
+.amccol .badge{display:inline-flex;align-items:center;gap:6px}
+.amccol .amcdot{box-shadow:0 0 0 1.5px #fff}
+
+/* AMC Client Master (22/11/2026): one block per Location 1, its entries below it. */
+.amclocs{display:grid;gap:14px}
+.amcloc{display:grid;gap:8px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-sunken)}
+.amcloch{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.amcloch .field{flex:1 1 220px;min-width:0}
+
+/* Return & Replace (22/11/2026, end-to-end test fix): only the chosen Location's entries show. On a phone the table rows
+   become cards (display:grid), which beat the browser's own [hidden] rule, so every Location's entries were shown. */
+#amcLocRows tr[hidden]{display:none}
+/* The entries box itself is a .field (display:grid), which also beat [hidden]: it showed, empty, before a Location was chosen. */
+#amcLocEntries[hidden]{display:none}
+
+/* Return & Replace (22/11/2026): the entry picked in Location 2 (entry) is marked in the table. */
+#amcLocRows tr.sel td{background:var(--primary-50);font-weight:600}

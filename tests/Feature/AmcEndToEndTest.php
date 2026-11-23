@@ -27,7 +27,7 @@ use Tests\TestCase;
 
 /**
  * AMC module, tester's end-to-end run (21/11/2026): two full entries (Smart Work and Rich Next, as in the client's sample)
- * taken through the masters, AMC Client Master, Customer PO / AMC with files, alerts, AMC list, dashboard and
+ * taken through the masters, AMC Client Inventory, Customer PO / AMC with files, alerts, AMC list, dashboard and
  * Return & Replace over HTTP, plus the edge cases: import with an error, date and role checks, colour boundaries,
  * the clean-up of old deployment images, and every AMC address refused without the right.
  */
@@ -92,6 +92,7 @@ class AmcEndToEndTest extends TestCase
     /** The masters of the sample, added over HTTP; duplicate names refused, edit and in-use delete checked later. */
     private function mastersOverHttp(User $admin): array
     {
+        $this->amcParties(); // (22/11/2026) AMC clients are customers of the Party master
         foreach (['AMC', 'AMC + Rental'] as $n) {
             $this->actingAs($admin)->post(route('amc.masters.verticals.store'), ['name' => $n, 'is_active' => 1])->assertRedirect()->assertSessionHasNoErrors();
         }
@@ -218,7 +219,7 @@ class AmcEndToEndTest extends TestCase
         $old = $this->employeeOverHttp($admin, 'Old Gardener', 'Gardener');
         $old->update(['status' => 'Inactive']);
 
-        // ---- AMC Client Master: Smart Work (AMC + Rental, Tower A / Floor 5 - Lobby, Money Plant 10, Rose 20) and Rich Next (AMC, ASTP, Rose 10).
+        // ---- AMC Client Inventory: Smart Work (AMC + Rental, Tower A / Floor 5 - Lobby, Money Plant 10, Rose 20) and Rich Next (AMC, ASTP, Rose 10).
         $this->actingAs($admin)->get(route('amc.clients.create'))->assertOk()->assertSee('name="lines[0][location_1]"', false)->assertSee('name="lines[0][location_2]"', false);
         $this->actingAs($admin)->post(route('amc.clients.store'), ['name' => '  Smart   Work ', 'amc_vertical_id' => $m['rental'], 'lines' => [
             ['location_1' => 'Tower A', 'location_2' => 'Floor 5 - Lobby', 'amc_planter_id' => $m['ceramic'], 'planter_qty' => '10', 'amc_plant_id' => $m['money'], 'plant_qty' => '10'],
@@ -229,7 +230,7 @@ class AmcEndToEndTest extends TestCase
             ['location_1' => 'ASTP', 'amc_plant_id' => $m['rose'], 'plant_qty' => '10'],
         ]])->assertSessionHasNoErrors();
         // Same name in another case refused; qty must be a whole number.
-        $this->actingAs($admin)->post(route('amc.clients.store'), ['name' => 'smart work', 'amc_vertical_id' => $m['amc']])->assertSessionHasErrors('name');
+        $this->actingAs($admin)->post(route('amc.clients.store'), ['name' => 'smart work', 'amc_vertical_id' => $m['amc']])->assertSessionHasErrors('party_id');
         $this->actingAs($admin)->post(route('amc.clients.store'), ['name' => 'Qty Co', 'amc_vertical_id' => $m['amc'], 'lines' => [['location_1' => 'X', 'plant_qty' => '2.5']]])->assertSessionHasErrors('lines.0.plant_qty');
         $this->assertSame(2, AmcClient::count());
 
@@ -251,8 +252,9 @@ class AmcEndToEndTest extends TestCase
         $page = $this->actingAs($admin)->get(route('amc.clients.edit', $sw))->assertOk()->getContent();
         $this->assertStringContainsString('name="lines[0][location_1]" value="Tower A"', $page);
         $this->assertStringContainsString('name="lines[0][location_2]" value="Floor 5 - Lobby"', $page);
-        // No contract yet: the gardener box is read-only and empty.
-        $this->assertMatchesRegularExpression('/id="gardener_show" value="" readonly/', $page);
+        // No contract yet and none picked: the gardener box is empty (22/11/2026: a dropdown of active Gardeners).
+        $this->assertMatchesRegularExpression('/<select class="inp\s*" id="gardener_id" name="gardener_id">\s*<option value="">None<\/option>/', $page);
+        $this->assertDoesNotMatchRegularExpression('/<option value="\d+" selected/', substr($page, strpos($page, 'id="gardener_id"'), 600));
 
         // List search and segment filter; CSV download, one row per line.
         $this->actingAs($admin)->get(route('amc.clients.index', ['q' => 'rich']))->assertOk()->assertSee('Rich Next')->assertDontSee('Smart Work');
@@ -319,9 +321,9 @@ class AmcEndToEndTest extends TestCase
         $this->assertSame(['2026-04-01', '2027-03-31', '12000.00', 'Quarterly', 'Weekly, every Monday'],
             [$swNow->start_date->toDateString(), $swNow->end_date->toDateString(), $swNow->amount, $swNow->billing_cycle, $swNow->visit_plan]);
 
-        // Client master: gardener read-only from the Active contract (Smart Work: Gopal, Rich Next: Suresh of the one ending last).
-        $this->actingAs($admin)->get(route('amc.clients.edit', $sw))->assertOk()->assertSee('id="gardener_show" value="Gopal Gardener (AE0002)" readonly', false);
-        $this->actingAs($admin)->get(route('amc.clients.edit', $rn))->assertOk()->assertSee('id="gardener_show" value="Suresh Gardener (AE0003)" readonly', false);
+        // Client master without its own gardener names the Active contract's (Smart Work: Gopal, Rich Next: Suresh of the one ending last).
+        $this->actingAs($admin)->get(route('amc.clients.edit', $sw))->assertOk()->assertSee('The Active contract has Gopal Gardener (AE0002).', false);
+        $this->actingAs($admin)->get(route('amc.clients.edit', $rn))->assertOk()->assertSee('The Active contract has Suresh Gardener (AE0003).', false);
         $this->assertSame($rnNow->id, $this->actingAs($admin)->getJson(route('amc.clients.info', $rn))->json('contract.id'));
 
         // ---- Files of Smart Work's contract.
@@ -462,7 +464,7 @@ class AmcEndToEndTest extends TestCase
         [$r1, $r2] = AmcReturn::orderBy('id')->get()->all();
         $this->assertSame(['RR-0001', 'Tower A', 'Floor 5 - Lobby', '2 ft', 'Needs Treatment', 2, '150.00'], [$r1->number(), $r1->location_1, $r1->location_2, $r1->plant_size, $r1->quality, $r1->qty, $r1->rate]);
         $this->assertSame(['ASTP', null, '5 ft', 'Dead', null], [$r2->location_1, $r2->location_2, $r2->plant_size, $r2->quality, $r2->replace_date]);
-        $this->actingAs($admin)->get(route('amc.returns.edit', $r1))->assertOk()->assertSee('value="Floor 5 - Lobby"', false)->assertSee('value="2 ft"', false);
+        $this->actingAs($admin)->get(route('amc.returns.edit', $r1))->assertOk()->assertSee('selected>Floor 5 - Lobby</option>', false)->assertSee('value="2 ft"', false);
         // Edit: quality changes.
         $this->actingAs($admin)->put(route('amc.returns.update', $r1), array_merge($ret, ['quality' => 'Reusable']))->assertSessionHasNoErrors();
         $this->assertSame('Reusable', $r1->fresh()->quality);
@@ -480,7 +482,7 @@ class AmcEndToEndTest extends TestCase
 
         // Deleting a contract deletes its files from the disk.
         $paths = AmcFile::where('amc_contract_id', $swNow->id)->pluck('path')->all();
-        $this->actingAs($admin)->delete(route('amc.contract.destroy', $swNow))->assertRedirect(route('amc.contracts.list'));
+        $this->actingAs($admin)->delete(route('amc.contract.destroy', $swNow))->assertRedirect(route('reports.amc.report', ['in' => 'amc']));
         foreach ($paths as $p) {
             $disk->assertMissing($p);
         }
@@ -647,7 +649,7 @@ class AmcEndToEndTest extends TestCase
 
         // Clients: View, Add, Edit, Import.
         $cv = $this->amcUser(['amc-client.view'], 'c.view@nursery.local');
-        $this->actingAs($cv)->get(route('amc.clients.edit', $client))->assertOk()->assertDontSee('Save changes');
+        $this->actingAs($cv)->get(route('amc.clients.edit', $client))->assertOk()->assertDontSee('</svg>Submit</button>', false);
         $this->actingAs($cv)->put(route('amc.clients.update', $client), ['name' => 'X', 'amc_vertical_id' => $m['amc']->id])->assertForbidden();
         $this->actingAs($cv)->post(route('amc.clients.store'), ['name' => 'X', 'amc_vertical_id' => $m['amc']->id])->assertForbidden();
         $this->actingAs($cv)->get(route('amc.clients.template'))->assertForbidden();
@@ -661,8 +663,8 @@ class AmcEndToEndTest extends TestCase
 
         // Contracts: View only sees the list and the contract, cannot add, edit, upload or delete.
         $kv = $this->amcUser(['amc-contract.view'], 'k.view@nursery.local');
-        $this->actingAs($kv)->get(route('amc.contract.index'))->assertRedirect(route('amc.contracts.list'));
-        $this->actingAs($kv)->get(route('amc.contract.show', $contract))->assertOk()->assertDontSee('Save changes')->assertDontSee('Upload')->assertDontSee('Delete contract');
+        $this->actingAs($kv)->get(route('amc.contract.index'))->assertRedirect(route('reports.amc.report', ['in' => 'amc']));
+        $this->actingAs($kv)->get(route('amc.contract.show', $contract))->assertOk()->assertDontSee('</svg>Submit</button>', false)->assertDontSee('Upload')->assertDontSee('Delete contract');
         $this->actingAs($kv)->get(route('amc.contract.create'))->assertForbidden();
         $this->actingAs($kv)->put(route('amc.contract.update', $contract), [])->assertForbidden();
         $this->actingAs($kv)->post(route('amc.contract.files.store', $contract), ['category' => 'po', 'files' => [$this->amcPdf()]])->assertForbidden();

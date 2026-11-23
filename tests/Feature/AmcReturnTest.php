@@ -45,7 +45,7 @@ class AmcReturnTest extends TestCase
         $this->assertSame(['Tower A', 'Floor 5 - Lobby', '5 ft', 4, '1250.50', 'Needs Treatment'], [$r->location_1, $r->location_2, $r->plant_size, $r->qty, $r->rate, $r->quality]);
         $this->assertSame(['2026-11-15', '2026-11-18'], [$r->request_date->toDateString(), $r->replace_date->toDateString()]);
         $this->assertTrue(ActivityLog::where('action', 'amc_return.created')->exists());
-        $this->actingAs($admin)->get(route('amc.returns.edit', $r))->assertOk()->assertSee('value="Tower A"', false)->assertSee('value="5 ft"', false);
+        $this->actingAs($admin)->get(route('amc.returns.edit', $r))->assertOk()->assertSee('<option selected>Tower A</option>', false)->assertSee('selected>Floor 5 - Lobby</option>', false)->assertSee('value="5 ft"', false);
 
         // The copied texts stay when the client's line changes later.
         $line->update(['location_1' => 'Tower Z']);

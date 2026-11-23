@@ -1,4 +1,4 @@
-{{-- AMC › AMC Client Master: one customer, its business segment and location lines. Gardener comes from its Active contract. --}}
+{{-- AMC › AMC Client Inventory: one customer, its business segment and location lines. Gardener: an active Gardener of the AMC Employee master (22/11/2026). --}}
 @php
   $isNew = ! $client->exists;
   $u = auth()->user();
@@ -6,7 +6,7 @@
   $v = fn ($f) => old($f, $client->{$f});
   $lines = old('lines') ?? $client->lines->map(fn ($l) => $l->only(['id', 'location_1', 'location_2', 'amc_planter_id', 'planter_qty', 'amc_plant_id', 'plant_qty']))->all();
   if (! $lines) { $lines = [[]]; }
-  $gardener = $client->activeContract?->gardener;
+  $contractGardener = $client->activeContract?->gardener;
 @endphp
 @extends('layouts.app', ['title' => $isNew ? 'Add AMC client' : $client->name])
 
@@ -31,8 +31,15 @@
       <fieldset @disabled(! $canSave) style="border:0;padding:0;margin:0;min-width:0;display:grid;gap:14px">
       <div class="fgrid">
         <div class="field">
-          <label for="name">Customer name<span class="req">*</span></label>
-          <input class="inp @error('name') err @enderror" id="name" name="name" value="{{ $v('name') }}" maxlength="150" required>
+          <label for="party_id">Customer name<span class="req">*</span></label>
+          <div class="picker" data-picker="field" data-url="{{ route('amc.lookup.parties', array_filter(['keep' => $client->party_id])) }}" data-placeholder="Type a customer name">
+            <select class="inp @error('party_id') err @enderror @error('name') err @enderror" id="party_id" name="party_id" aria-required="true">
+              <option value="">Select a customer</option>
+              @foreach ($parties as $id => $label)<option value="{{ $id }}" @selected((string) old('party_id', $client->party_id) === (string) $id)>{{ $label }}</option>@endforeach
+            </select>
+          </div>
+          <span class="hint txt">Active customers of the Party master (Admin › Masters › Parties).@if (! $isNew && ! $client->party_id) Not linked yet: was "{{ $client->name }}".@endif</span>
+          @include('partials.ferr', ['name' => 'party_id'])
           @include('partials.ferr', ['name' => 'name'])
         </div>
         <div class="field">
@@ -45,54 +52,81 @@
           @include('partials.ferr', ['name' => 'amc_vertical_id'])
         </div>
         <div class="field">
-          <label for="gardener_show">Gardener name</label>
-          <input class="inp" id="gardener_show" value="{{ $gardener?->label() }}" readonly placeholder="No Active contract" tabindex="-1">
-          <span class="hint txt">From the client's current Active contract (Customer PO / AMC).</span>
+          <label for="gardener_id">Gardener name</label>
+          <div class="picker" data-picker="field" data-url="{{ route('amc.lookup.employees', ['role' => 'Gardener']) }}" data-placeholder="Type a name or code">
+            <select class="inp @error('gardener_id') err @enderror" id="gardener_id" name="gardener_id">
+              <option value="">None</option>
+              @foreach ($gardeners as $id => $label)<option value="{{ $id }}" @selected((string) old('gardener_id', $client->gardener_id) === (string) $id)>{{ $label }}</option>@endforeach
+            </select>
+          </div>
+          <span class="hint txt">Active AMC employees whose role is Gardener. A new contract for this client starts with this gardener.@if ($contractGardener && $contractGardener->id !== $client->gardener_id) The Active contract has {{ $contractGardener->label() }}.@endif</span>
+          @include('partials.ferr', ['name' => 'gardener_id'])
         </div>
       </div>
 
+      {{-- (22/11/2026) Grouped by Location 1: each Location 1 is typed once, with its entries (Location 2, planter, plant
+           and quantities) below it. Saved as one line per entry, each with its Location 1, so import and export are unchanged. --}}
+      @php
+        $groups = [];
+        foreach ($lines as $i => $l) { $groups[(string) ($l['location_1'] ?? '')][$i] = $l; }
+        $nextKey = $lines ? max(array_map('intval', array_keys($lines))) + 1 : 1;
+      @endphp
       <div class="lbl">Locations, planters and plants</div>
-      <div class="tablecard" style="overflow-x:auto">
-        <table class="atable lines rtable">
-          <thead><tr><th style="min-width:150px">Location 1</th><th style="min-width:150px">Location 2</th><th style="min-width:150px">Planter</th><th class="r" style="min-width:90px">Planter qty</th><th style="min-width:150px">Plant</th><th class="r" style="min-width:90px">Plant qty</th><th><span class="sr">Remove</span></th></tr></thead>
-          <tbody id="amcLines">
-          @foreach (array_values($lines) as $i => $l)
-            <tr>
-              <td data-label="Location 1">@if (! empty($l['id']))<input type="hidden" name="lines[{{ $i }}][id]" value="{{ $l['id'] }}">@endif<input class="inp @error("lines.$i.location_1") err @enderror" name="lines[{{ $i }}][location_1]" value="{{ $l['location_1'] ?? '' }}" maxlength="150" aria-label="Location 1, line {{ $i + 1 }}" placeholder="e.g. Tower A">@include('partials.ferr', ['name' => "lines.$i.location_1"])</td>
-              <td data-label="Location 2"><input class="inp @error("lines.$i.location_2") err @enderror" name="lines[{{ $i }}][location_2]" value="{{ $l['location_2'] ?? '' }}" maxlength="150" aria-label="Location 2, line {{ $i + 1 }}" placeholder="e.g. Floor 5 - Lobby">@include('partials.ferr', ['name' => "lines.$i.location_2"])</td>
-              <td data-label="Planter"><select class="inp @error("lines.$i.amc_planter_id") err @enderror" name="lines[{{ $i }}][amc_planter_id]" aria-label="Planter, line {{ $i + 1 }}"><option value="">None</option>@foreach ($planters as $o)<option value="{{ $o->id }}" @selected((string) ($l['amc_planter_id'] ?? '') === (string) $o->id)>{{ $o->name }}</option>@endforeach</select>@include('partials.ferr', ['name' => "lines.$i.amc_planter_id"])</td>
-              <td data-label="Planter qty"><input class="inp num @error("lines.$i.planter_qty") err @enderror" name="lines[{{ $i }}][planter_qty]" value="{{ $l['planter_qty'] ?? '' }}" inputmode="numeric" aria-label="Planter qty, line {{ $i + 1 }}">@include('partials.ferr', ['name' => "lines.$i.planter_qty"])</td>
-              <td data-label="Plant"><select class="inp @error("lines.$i.amc_plant_id") err @enderror" name="lines[{{ $i }}][amc_plant_id]" aria-label="Plant, line {{ $i + 1 }}"><option value="">None</option>@foreach ($plants as $o)<option value="{{ $o->id }}" @selected((string) ($l['amc_plant_id'] ?? '') === (string) $o->id)>{{ $o->label() }}</option>@endforeach</select>@include('partials.ferr', ['name' => "lines.$i.amc_plant_id"])</td>
-              <td data-label="Plant qty"><input class="inp num @error("lines.$i.plant_qty") err @enderror" name="lines[{{ $i }}][plant_qty]" value="{{ $l['plant_qty'] ?? '' }}" inputmode="numeric" aria-label="Plant qty, line {{ $i + 1 }}">@include('partials.ferr', ['name' => "lines.$i.plant_qty"])</td>
-              <td class="del">@if ($canSave)<button class="btn gh icon sm" type="button" data-del-line aria-label="Remove line {{ $i + 1 }}"><svg class="ico"><use href="#i-x"/></svg></button>@endif</td>
-            </tr>
-          @endforeach
-          </tbody>
-        </table>
+      <div id="amcLocs" class="amclocs" data-next="{{ $nextKey }}">
+        @foreach ($groups as $loc1 => $rows)
+          @php($loc1Err = collect(array_keys($rows))->map(fn ($i) => $errors->first("lines.$i.location_1"))->filter()->first())
+          <div class="amcloc" data-loc>
+            <div class="amcloch">
+              <div class="field grow">
+                <label>Location</label>
+                <input class="inp {{ $loc1Err ? 'err' : '' }}" value="{{ $loc1 }}" maxlength="150" placeholder="e.g. Tower A" aria-label="Location" data-loc1>
+                @if ($loc1Err)<span class="ferr">{{ $loc1Err }}</span>@endif
+              </div>
+              @if ($canSave)<button class="btn gh sm" type="button" data-del-loc style="color:var(--error-700)"><svg class="ico"><use href="#i-x"/></svg>Remove location</button>@endif
+            </div>
+            <div class="tablecard" style="overflow-x:auto">
+              <table class="atable lines rtable">
+                <thead><tr><th style="min-width:150px">Location 2</th><th style="min-width:150px">Planter</th><th class="r" style="min-width:90px">Planter qty</th><th style="min-width:150px">Plant</th><th class="r" style="min-width:90px">Plant qty</th><th><span class="sr">Remove</span></th></tr></thead>
+                <tbody data-rows>
+                  @foreach ($rows as $i => $l)
+                    @include('amc.clients.line-row', ['i' => $i, 'l' => $l, 'loc1' => $loc1])
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+            @if ($canSave)<div><button class="btn gh sm" type="button" data-add-row><svg class="ico"><use href="#i-plus"/></svg>Add row under this location</button></div>@endif
+          </div>
+        @endforeach
       </div>
       @include('partials.ferr', ['name' => 'lines'])
-      @if ($canSave)<div><button class="btn add sm" type="button" data-add-line><svg class="ico"><use href="#i-plus"/></svg>Add line</button></div>@endif
-      <div class="ruleh"><svg class="ico"><use href="#i-info"/></svg><span>Fields marked * are mandatory. The customer name cannot repeat. Each line is optional and can have two locations (for example "Tower A" and "Floor 5 - Lobby"), a planter and a plant with their quantities; an empty line is not saved. Planter and Plant come from their AMC masters.</span></div>
+      @if ($canSave)<div><button class="btn add sm" type="button" data-add-loc><svg class="ico"><use href="#i-plus"/></svg>Add Location</button></div>@endif
+      <div class="ruleh"><svg class="ico"><use href="#i-info"/></svg><span>Fields marked * are mandatory. The customer name cannot repeat. Type each Location once (for example "Tower A") and add its entries below it: Location 2 (for example "Floor 5 - Lobby"), a planter and a plant with their quantities. An empty entry is not saved. Planter and Plant come from their AMC masters.</span></div>
       </fieldset>
     </div>
   </div>
   @include('crm.partials.audit', ['m' => $client])
   <div class="formfoot">
     <span class="sp"></span>
-    @if ($canSave)<button class="btn {{ $isNew ? 'add' : 'pri' }}" type="submit"><svg class="ico"><use href="#i-{{ $isNew ? 'plus' : 'check' }}"/></svg>{{ $isNew ? 'Add client' : 'Save changes' }}</button>@endif
+    @if ($canSave)<button class="btn {{ $isNew ? 'add' : 'pri' }}" type="submit"><svg class="ico"><use href="#i-{{ $isNew ? 'plus' : 'check' }}"/></svg>Submit</button>@endif
   </div>
 </form>
 
-<template id="amcLineTpl">
-  <tr>
-    <td data-label="Location 1"><input class="inp" name="lines[__i__][location_1]" maxlength="150" aria-label="Location 1, line __n__" placeholder="e.g. Tower A"></td>
-    <td data-label="Location 2"><input class="inp" name="lines[__i__][location_2]" maxlength="150" aria-label="Location 2, line __n__" placeholder="e.g. Floor 5 - Lobby"></td>
-    <td data-label="Planter"><select class="inp" name="lines[__i__][amc_planter_id]" aria-label="Planter, line __n__"><option value="">None</option>@foreach ($planters as $o)@if ($o->is_active)<option value="{{ $o->id }}">{{ $o->name }}</option>@endif @endforeach</select></td>
-    <td data-label="Planter qty"><input class="inp num" name="lines[__i__][planter_qty]" inputmode="numeric" aria-label="Planter qty, line __n__"></td>
-    <td data-label="Plant"><select class="inp" name="lines[__i__][amc_plant_id]" aria-label="Plant, line __n__"><option value="">None</option>@foreach ($plants as $o)@if ($o->is_active)<option value="{{ $o->id }}">{{ $o->label() }}</option>@endif @endforeach</select></td>
-    <td data-label="Plant qty"><input class="inp num" name="lines[__i__][plant_qty]" inputmode="numeric" aria-label="Plant qty, line __n__"></td>
-    <td class="del"><button class="btn gh icon sm" type="button" data-del-line aria-label="Remove line __n__"><svg class="ico"><use href="#i-x"/></svg></button></td>
-  </tr>
+{{-- A new entry row: active planters and plants only. --}}
+<template id="amcRowTpl">@include('amc.clients.line-row', ['i' => '__i__', 'l' => [], 'loc1' => '', 'planters' => $planters->where('is_active', true), 'plants' => $plants->where('is_active', true)])</template>
+<template id="amcLocTpl">
+  <div class="amcloc" data-loc>
+    <div class="amcloch">
+      <div class="field grow"><label>Location</label><input class="inp" maxlength="150" placeholder="e.g. Tower A" aria-label="Location" data-loc1></div>
+      <button class="btn gh sm" type="button" data-del-loc style="color:var(--error-700)"><svg class="ico"><use href="#i-x"/></svg>Remove location</button>
+    </div>
+    <div class="tablecard" style="overflow-x:auto">
+      <table class="atable lines rtable">
+        <thead><tr><th style="min-width:150px">Location 2</th><th style="min-width:150px">Planter</th><th class="r" style="min-width:90px">Planter qty</th><th style="min-width:150px">Plant</th><th class="r" style="min-width:90px">Plant qty</th><th><span class="sr">Remove</span></th></tr></thead>
+        <tbody data-rows></tbody>
+      </table>
+    </div>
+    <div><button class="btn gh sm" type="button" data-add-row><svg class="ico"><use href="#i-plus"/></svg>Add row under this location</button></div>
+  </div>
 </template>
 @include('crm.partials.history', ['history' => $history])
 @endsection

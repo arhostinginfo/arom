@@ -1,10 +1,10 @@
-{{-- AMC › AMC Client Master: paged, searched and filtered on the server (rule P1), Import and Download CSV. --}}
-@extends('layouts.app', ['title' => 'AMC Client Master'])
+{{-- AMC › AMC Client Inventory: paged, searched and filtered on the server (rule P1), Import and Download CSV. --}}
+@extends('layouts.app', ['title' => 'AMC Client Inventory'])
 
 @section('content')
 @include('amc.partials.assets')
 <div class="pagehd">
-  <h1>AMC Client Master</h1>
+  <h1>AMC Client Inventory</h1>
   <span class="badge b-neu">{{ \App\Support\Money::indian($rows->total()) }}</span>
   <span class="sp"></span>
   @can('amc-client-import.add')@include('partials.iobtn', ['kind' => 'import', 'label' => 'Import', 'open' => '#importLayer'])@endcan
@@ -35,7 +35,7 @@
         <td data-label="Customer name" class="wide"><a class="rowlink" href="{{ route('amc.clients.edit', $c) }}"><b>{{ $c->name }}</b></a></td>
         <td data-label="Business segment">{{ $c->vertical?->name }}</td>
         <td data-label="Lines" class="r num">{{ $c->lines_count }}</td>
-        <td data-label="Gardener">{{ $c->activeContract?->gardener?->name }}</td>
+        <td data-label="Gardener">{{ $c->gardener?->name ?? $c->activeContract?->gardener?->name }}</td>
         <td data-label="Updated" class="num">{{ $c->updated_at?->format(config('nursery.date_format')) }}</td>
       </tr>
     @empty

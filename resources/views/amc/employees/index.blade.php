@@ -3,6 +3,7 @@
 
 @section('content')
 @include('amc.partials.assets')
+@include('amc.partials.master-tabs', ['on' => 'employees'])
 <div class="pagehd">
   <h1>AMC Employee master</h1>
   <span class="badge b-neu">{{ \App\Support\Money::indian($rows->total()) }}</span>

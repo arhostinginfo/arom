@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 /**
- * AMC Client Master (21/11/2026): a customer with its business segment and location lines. Lines keep their ids when a
+ * AMC Client Inventory (21/11/2026): a customer with its business segment and location lines. Lines keep their ids when a
  * client is changed (sent back with the form), so a Return & Replace entry that points at a line keeps pointing at it.
  * Import: one CSV row per line, rows grouped by customer name; the whole file is checked first and nothing is saved on
  * any error.
@@ -43,6 +43,12 @@ class AmcClientService
             $client = $isNew ? new AmcClient() : AmcClient::whereKey($client->id)->lockForUpdate()->firstOrFail();
             $before = $isNew ? [] : $this->snapshot($client);
             $client->fill(['name' => $data['name'], 'amc_vertical_id' => $data['amc_vertical_id']]);
+            if (! empty($data['party_id'])) {
+                $client->party_id = $data['party_id'];
+            }
+            if (array_key_exists('gardener_id', $data)) {
+                $client->gardener_id = $data['gardener_id'] ?: null;
+            }
             if ($isNew) {
                 $client->created_by = $actor->id;
             }
@@ -114,6 +120,12 @@ class AmcClientService
                 return $id;
             };
             $name = $cell('name');
+            // (22/11/2026) the customer must be an active customer of the Party master; its name is the party's
+            $party = AmcClientRequest::partyByName($name);
+            if ($name !== null && ! $party) {
+                $local[] = 'customer "'.$name.'" is not an active customer in the Party master';
+            }
+            $name = $party?->name ?? $name;
             $vertical = $find('vertical', $verticals, 'business segment', 'amc_vertical_id');
             $line = [
                 'location_1' => $cell('location_1'),
@@ -125,8 +137,11 @@ class AmcClientService
             ];
             $v = Validator::make(['name' => $name, 'amc_vertical_id' => $vertical, 'lines' => [$line]], AmcClientRequest::fieldRules(), AmcClientRequest::fieldMessages(), AmcClientRequest::fieldAttributes());
             $key = mb_strtolower((string) $name);
+            if ($party && AmcClient::where('party_id', $party->id)->exists() && ! isset($known[$key])) {
+                $local[] = 'customer "'.$name.'" is already in the AMC Client Inventory; change it on its page';
+            }
             if ($name && isset($known[$key])) {
-                $local[] = 'customer "'.$name.'" is already in the AMC Client Master; change it on its page';
+                $local[] = 'customer "'.$name.'" is already in the AMC Client Inventory; change it on its page';
             }
             if ($name && isset($groups[$key]) && $vertical && $groups[$key]['amc_vertical_id'] !== $vertical) {
                 $local[] = 'the business segment differs from row '.$groups[$key]['_row'].' of the same customer';
@@ -138,7 +153,7 @@ class AmcClientService
 
                 continue;
             }
-            $groups[$key] ??= ['name' => $name, 'amc_vertical_id' => $vertical, '_row' => $row['_row'], 'lines' => []];
+            $groups[$key] ??= ['name' => $name, 'party_id' => $party->id, 'amc_vertical_id' => $vertical, '_row' => $row['_row'], 'lines' => []];
             // A row with nothing but the customer name and segment adds the client with no line.
             if (array_filter($line, fn ($x) => $x !== null)) {
                 foreach (['planter_qty', 'plant_qty'] as $q) {
@@ -154,7 +169,7 @@ class AmcClientService
         return DB::transaction(function () use ($groups, $actor) {
             $added = [];
             foreach ($groups as $g) {
-                $client = new AmcClient(['name' => $g['name'], 'amc_vertical_id' => $g['amc_vertical_id']]);
+                $client = new AmcClient(['party_id' => $g['party_id'], 'name' => $g['name'], 'amc_vertical_id' => $g['amc_vertical_id']]);
                 $client->created_by = $actor->id;
                 $client->updated_by = $actor->id;
                 $client->save();
@@ -176,7 +191,8 @@ class AmcClientService
     public function snapshot(AmcClient $c): array
     {
         $c->loadMissing(['vertical', 'lines.planter', 'lines.plant']);
-        $out = ['Customer name' => $c->name, 'Business segment' => $c->vertical?->name];
+        $c->load('gardener');
+        $out = ['Customer name' => $c->name, 'Business segment' => $c->vertical?->name, 'Gardener' => $c->gardener?->label()];
         foreach ($c->lines as $l) {
             $out['Line '.$l->line_no] = self::lineText($l);
         }

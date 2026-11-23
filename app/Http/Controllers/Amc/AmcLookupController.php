@@ -30,6 +30,19 @@ class AmcLookupController extends Controller
             ->map(fn ($c) => ['id' => $c->id, 'label' => $c->name, 'sub' => $c->vertical?->name]));
     }
 
+    /** (22/11/2026) Active customer parties not yet in the AMC Client Inventory (the client being edited may keep its own). */
+    public function parties(Request $request): JsonResponse
+    {
+        $q = LookupController::term($request);
+        $keep = $request->integer('keep') ?: null;
+
+        return response()->json(\App\Http\Requests\Amc\AmcClientRequest::customerParties()
+            ->where(fn ($w) => $w->whereNotIn('id', AmcClient::query()->whereNotNull('party_id')->select('party_id'))->when($keep, fn ($k) => $k->orWhere('id', $keep)))
+            ->when($q !== '', fn ($w) => $w->where('name', 'like', LookupController::prefix($q)))
+            ->orderBy('name')->orderBy('id')->forPage(LookupController::page(), LookupController::LIMIT)->get(['id', 'name', 'gstin', 'type'])
+            ->map(fn ($p) => ['id' => $p->id, 'label' => $p->name, 'sub' => $p->gstin ?: $p->type]));
+    }
+
     /** Active AMC employees, of one role when ?role= is Operation Manager or Gardener. */
     public function employees(Request $request): JsonResponse
     {

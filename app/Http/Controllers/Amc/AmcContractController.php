@@ -38,7 +38,7 @@ class AmcContractController extends Controller
     /** Menu item "Customer PO / AMC": a new contract for users who may add one, otherwise the AMC list. */
     public function index(Request $request): RedirectResponse
     {
-        return redirect()->route($request->user()->can('amc-contract.add') ? 'amc.contract.create' : 'amc.contracts.list');
+        return $request->user()->can('amc-contract.add') ? redirect()->route('amc.contract.create') : redirect()->route('reports.amc.report', ['in' => 'amc']);
     }
 
     public function list(Request $request): View
@@ -96,7 +96,7 @@ class AmcContractController extends Controller
     {
         $this->contracts->delete($contract, $request->user());
 
-        return redirect()->route('amc.contracts.list')->with('toast', 'AMC contract '.$contract->number().' deleted');
+        return redirect()->route('reports.amc.report', ['in' => 'amc'])->with('toast', 'AMC contract '.$contract->number().' deleted');
     }
 
     public function upload(AmcFileRequest $request, AmcContract $contract): RedirectResponse

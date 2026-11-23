@@ -15,10 +15,10 @@
 </div>
 
 <div class="kpis dashkpis">
-  <a class="card kpi" href="{{ route('amc.contracts.list', ['status' => 'Active']) }}" data-tile="active-clients"><span class="ovl">Total active clients</span><span class="v">{{ $num($d['activeClients']) }}</span><span class="d">With an Active contract today</span></a>
+  <a class="card kpi" href="{{ route('reports.amc.report', ['status' => 'Active', 'in' => 'amc']) }}" data-tile="active-clients"><span class="ovl">Total active clients</span><span class="v">{{ $num($d['activeClients']) }}</span><span class="d">With an Active contract today</span></a>
   <div class="card kpi" data-tile="month-revenue"><span class="ovl">AMC revenue · {{ $d['thisMonthLabel'] }}</span><span class="v">{{ $money($d['thisMonth'] ?? 0) }}</span><span class="d">{{ $money($d['revenueTotal']) }} in FY {{ $fy->label() }}</span></div>
-  <a class="card kpi {{ $d['renewalCount'] ? 'kpidue' : '' }}" href="{{ route('amc.contracts.list', ['renewal' => 1]) }}" data-tile="renewals"><span class="ovl">Renewals due</span><span class="v">{{ $num($d['renewalCount']) }}</span><span class="d">Ending in the next {{ config('amc.renew_days') }} days</span></a>
-  <a class="card kpi {{ $d['overdueCount'] ? 'kpidue' : '' }}" href="{{ route('amc.contracts.list', ['colour' => 'black']) }}" data-tile="overdue"><span class="ovl">Overdue</span><span class="v">@if ($d['overdueCount'])<svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>@endif{{ $num($d['overdueCount']) }}</span><span class="d">End date passed, still Active</span></a>
+  <a class="card kpi {{ $d['renewalCount'] ? 'kpidue' : '' }}" href="{{ route('reports.amc.report', ['renewal' => 1, 'in' => 'amc']) }}" data-tile="renewals"><span class="ovl">Renewals due</span><span class="v">{{ $num($d['renewalCount']) }}</span><span class="d">Ending in the next {{ config('amc.renew_days') }} days</span></a>
+  <a class="card kpi {{ $d['overdueCount'] ? 'kpidue' : '' }}" href="{{ route('reports.amc.report', ['colour' => 'black', 'in' => 'amc']) }}" data-tile="overdue"><span class="ovl">Overdue</span><span class="v">@if ($d['overdueCount'])<svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>@endif{{ $num($d['overdueCount']) }}</span><span class="d">End date passed, still Active</span></a>
   <div class="card kpi" data-tile="new-orders"><span class="ovl">New orders</span><span class="v">{{ $num($d['newCount']) }}</span><span class="d">Contracts added in the last 60 days</span></div>
 </div>
 
@@ -39,7 +39,7 @@
     </div>
   </div>
   <div class="sectcard">
-    <div class="sh"><h2>Overdue</h2><span class="badge b-black">{{ $num($d['overdueCount']) }}</span>@if ($d['overdueCount'] > count($d['overdue']))<span class="sp"></span><a class="btn gh sm" href="{{ route('amc.contracts.list', ['colour' => 'black']) }}">View all</a>@endif</div>
+    <div class="sh"><h2>Overdue</h2><span class="badge b-black">{{ $num($d['overdueCount']) }}</span>@if ($d['overdueCount'] > count($d['overdue']))<span class="sp"></span><a class="btn gh sm" href="{{ route('reports.amc.report', ['colour' => 'black', 'in' => 'amc']) }}">View all</a>@endif</div>
     <div class="sb">
       @if ($d['overdue']->isEmpty())
         <div class="empty">No overdue contracts.</div>

@@ -10,7 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Tests\AmcFixtures;
 use Tests\TestCase;
 
-/** AMC Client Master (21/11/2026): two location texts per line, edit keeping line ids, gardener, import and CSV download. */
+/** AMC Client Inventory (21/11/2026): two location texts per line, edit keeping line ids, gardener, import and CSV download. */
 class AmcClientTest extends TestCase
 {
     use AmcFixtures;
@@ -30,7 +30,7 @@ class AmcClientTest extends TestCase
     {
         $m = $this->amcMasters();
         $admin = $this->admin();
-        $this->actingAs($admin)->get(route('amc.clients.create'))->assertOk()->assertSee('Location 1')->assertSee('Location 2');
+        $this->actingAs($admin)->get(route('amc.clients.create'))->assertOk()->assertSee('<label>Location</label>', false)->assertSee('Location 2')->assertSee('Add Location</button>', false);
 
         $this->actingAs($admin)->post(route('amc.clients.store'), [
             'name' => ' Smart  Work ', 'amc_vertical_id' => $m['rental']->id,
@@ -64,26 +64,26 @@ class AmcClientTest extends TestCase
 
         // Customer name is unique.
         $this->actingAs($admin)->post(route('amc.clients.store'), ['name' => 'smart work', 'amc_vertical_id' => $m['amc']->id])
-            ->assertSessionHasErrors('name');
+            ->assertSessionHasErrors('party_id'); // (22/11/2026) reported once, on the customer (party) field
         // Quantities are whole numbers.
         $this->actingAs($admin)->put(route('amc.clients.update', $c), ['name' => 'Smart Work', 'amc_vertical_id' => $m['amc']->id, 'lines' => [['location_1' => 'X', 'plant_qty' => '2.5']]])
             ->assertSessionHasErrors('lines.0.plant_qty');
     }
 
-    public function test_gardener_is_shown_from_the_active_contract(): void
+    // (22/11/2026) The gardener is picked on the client; without one the list shows the Active contract's gardener.
+    public function test_gardener_without_one_on_the_client_comes_from_the_active_contract(): void
     {
         $c = $this->amcClient();
         $admin = $this->admin();
-        $this->actingAs($admin)->get(route('amc.clients.edit', $c))->assertOk()->assertSee('placeholder="No Active contract"', false);
-
         $g = $this->amcEmployee('Mahesh Gardener', 'Gardener');
         $this->amcContract($c, ['gardener_id' => $g->id]);
-        $this->actingAs($admin)->get(route('amc.clients.edit', $c))->assertOk()->assertSee('value="Mahesh Gardener ('.$g->code.')"', false);
+        $this->actingAs($admin)->get(route('amc.clients.edit', $c))->assertOk()->assertSee('The Active contract has Mahesh Gardener ('.$g->code.').', false);
         $this->actingAs($admin)->get(route('amc.clients.index'))->assertOk()->assertSee('Mahesh Gardener');
 
         // An Inactive contract no longer names the gardener.
         $c->contracts()->update(['status' => 'Inactive']);
-        $this->actingAs($admin)->get(route('amc.clients.edit', $c))->assertOk()->assertDontSee('value="Mahesh Gardener', false);
+        $this->actingAs($admin)->get(route('amc.clients.edit', $c))->assertOk()->assertDontSee('The Active contract has', false);
+        $this->actingAs($admin)->get(route('amc.clients.index'))->assertOk()->assertDontSee('Mahesh Gardener');
     }
 
     public function test_import_groups_rows_by_customer_and_matches_masters_by_name(): void
@@ -123,7 +123,7 @@ class AmcClientTest extends TestCase
         $this->assertStringContainsString('Row 3: business segment "Rental only" is not in the business segment master', $errors[0]);
         $this->assertStringContainsString('Row 4: plant "Tulip"', $errors[1]);
         $this->assertStringContainsString('Row 5', $errors[2]);
-        $this->assertStringContainsString('Row 6: customer "Already There" is already in the AMC Client Master', $errors[3]);
+        $this->assertStringContainsString('Row 6: customer "Already There" is already in the AMC Client Inventory', $errors[3]);
         $this->assertStringContainsString('Row 7', $errors[4]);
         $this->assertNull(AmcClient::where('name', 'Good One')->first(), 'nothing is saved');
 

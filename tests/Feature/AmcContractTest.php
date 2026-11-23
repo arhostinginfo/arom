@@ -215,6 +215,11 @@ class AmcContractTest extends TestCase
         $html = $this->actingAs($admin)->get(route('amc.contracts.list'))->assertOk()->getContent();
         $this->assertStringContainsString('Green: Active, end date more than 30 days away', $html);
         $this->assertStringContainsString('Black: overdue, end date passed', $html);
+        // (22/11/2026) the Status column, second, shows the colour with the contract's status
+        $this->assertMatchesRegularExpression('/AMC no.*?<th>Status<\/th>\s*<th>Customer<\/th>/s', $html);
+        // the status only, no colour name (the badge and dot carry the colour)
+        $this->assertSame(4, substr_count($html, 'aria-hidden="true"></i>Active</span>'));
+        $this->assertSame(1, substr_count($html, 'aria-hidden="true"></i>Inactive</span>'));
         foreach (['green' => 1, 'red' => 2, 'black' => 1, 'grey' => 1] as $k => $n) {
             $this->assertSame($n, substr_count($html, 'data-colour="'.$k.'"'), $k);
             $this->assertSame($n, substr_count($html, 'class="clk c-'.$k.'"'), $k);
@@ -283,7 +288,7 @@ class AmcContractTest extends TestCase
         $c = $this->amcContract($this->amcClient());
         $this->actingAs($admin)->post(route('amc.contract.files.store', $c), ['category' => 'po', 'files' => [$this->amcPdf()]]);
         $path = AmcFile::firstOrFail()->path;
-        $this->actingAs($admin)->delete(route('amc.contract.destroy', $c))->assertRedirect(route('amc.contracts.list'));
+        $this->actingAs($admin)->delete(route('amc.contract.destroy', $c))->assertRedirect(route('reports.amc.report', ['in' => 'amc']));
         $this->assertNull($c->fresh());
         $this->assertSame(0, AmcFile::count());
         Storage::disk('local')->assertMissing($path);

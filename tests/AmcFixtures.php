@@ -37,6 +37,9 @@ trait AmcFixtures
     /** Business segments, planters, plants and AMC types of the client's sample data. */
     protected function amcMasters(): array
     {
+        // (22/11/2026) AMC clients are customers of the Party master: the names the AMC tests use.
+        $this->amcParties();
+
         return [
             'amc' => AmcVertical::firstOrCreate(['name' => 'AMC']),
             'rental' => AmcVertical::firstOrCreate(['name' => 'AMC + Rental']),
@@ -46,6 +49,19 @@ trait AmcFixtures
             'type' => AmcType::firstOrCreate(['name' => 'Indoor maintenance']),
             'type2' => AmcType::firstOrCreate(['name' => 'Outdoor maintenance']),
         ];
+    }
+
+    protected function amcParties(): void
+    {
+        foreach (['Smart Work', 'Rich Next', 'Green Tower', 'Qty Co', 'X', 'Smart Work Pvt', 'Imported Co', 'Empty Lines Ltd',
+            'Good One', 'Bad Segment', 'Bad Plant', 'Bad Qty', 'Already There'] as $party) {
+            $this->amcParty($party);
+        }
+    }
+
+    protected function amcParty(string $name, string $type = 'Customer', string $status = 'Active'): \App\Models\Party
+    {
+        return \App\Models\Party::firstOrCreate(['name' => $name], ['type' => $type, 'status' => $status]);
     }
 
     protected function amcEmployee(string $name, string $role, array $over = []): AmcEmployee
@@ -59,7 +75,7 @@ trait AmcFixtures
     protected function amcClient(string $name = 'Smart Work', ?array $lines = null): AmcClient
     {
         $m = $this->amcMasters();
-        $c = AmcClient::create(['name' => $name, 'amc_vertical_id' => $m['rental']->id]);
+        $c = AmcClient::create(['party_id' => $this->amcParty($name)->id, 'name' => $name, 'amc_vertical_id' => $m['rental']->id]);
         $lines ??= [
             ['location_1' => 'Tower A', 'location_2' => 'Floor 5 - Lobby', 'amc_planter_id' => $m['ceramic']->id, 'planter_qty' => 10, 'amc_plant_id' => $m['money']->id, 'plant_qty' => 10],
             ['location_1' => 'Tower A', 'location_2' => 'Floor 6', 'amc_plant_id' => $m['rose']->id, 'plant_qty' => 20],

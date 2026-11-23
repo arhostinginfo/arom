@@ -9,6 +9,7 @@
 
 @section('content')
 @include('amc.partials.assets')
+@include('amc.partials.master-tabs', ['on' => $master])
 <div class="pagehd">
   <h1>{{ $cfg['title'] }}</h1>
   <span class="badge b-neu">{{ \App\Support\Money::indian($rows->total()) }}</span>
@@ -74,7 +75,7 @@
       <div class="ruleh"><svg class="ico"><use href="#i-info"/></svg><span>Fields marked * are mandatory. {{ $cfg['hint'] }} The name cannot repeat. @if ($editing && $editingUsed) In use on {{ $editingUsed }} record(s), so it cannot be deleted; make it inactive to hide it from dropdowns.@endif</span></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         @if ($editing)<a class="btn gh" href="{{ route($base.'.index') }}">Cancel</a>@endif
-        <button class="btn {{ $editing ? 'pri' : 'add' }}" type="submit"><svg class="ico"><use href="#i-{{ $editing ? 'check' : 'plus' }}"/></svg>{{ $editing ? 'Save changes' : 'Add' }}</button>
+        <button class="btn {{ $editing ? 'pri' : 'add' }}" type="submit"><svg class="ico"><use href="#i-{{ $editing ? 'check' : 'plus' }}"/></svg>Submit</button>
       </div>
     </div>
   </form>

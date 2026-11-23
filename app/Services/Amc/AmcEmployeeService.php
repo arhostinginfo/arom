@@ -16,8 +16,8 @@ use Illuminate\Validation\ValidationException;
  */
 class AmcEmployeeService
 {
-    /** Contract and Return & Replace columns that point at an employee: an employee in use cannot be deleted. */
-    public const USED = ['amc_contracts.operation_manager_id', 'amc_contracts.gardener_id', 'amc_returns.reported_by_id', 'amc_returns.gardener_id'];
+    /** Client, contract and Return & Replace columns that point at an employee: an employee in use cannot be deleted. */
+    public const USED = ['amc_clients.gardener_id', 'amc_contracts.operation_manager_id', 'amc_contracts.gardener_id', 'amc_returns.reported_by_id', 'amc_returns.gardener_id'];
 
     public function save(?AmcEmployee $e, array $data, ?UploadedFile $photo, User $actor): AmcEmployee
     {

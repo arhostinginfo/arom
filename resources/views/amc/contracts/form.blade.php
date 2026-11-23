@@ -12,16 +12,16 @@
   $left = $isNew ? null : $c->daysLeft();
   $personUrl = fn ($role) => route('amc.lookup.employees', ['role' => $role]);
 @endphp
-@extends('layouts.app', ['title' => $isNew ? 'Customer PO / AMC' : $c->number()])
+@extends('layouts.app', ['title' => $isNew ? 'AMC Tracker' : $c->number()])
 
 @section('content')
 @include('amc.partials.assets')
 <div class="pagehd">
-  <h1>{{ $isNew ? 'Customer PO / AMC' : $c->number().' · '.$c->client?->name }}</h1>
+  <h1>{{ $isNew ? 'AMC Tracker' : $c->number().' · '.$c->client?->name }}</h1>
   @if ($colour)<span class="badge {{ \App\Models\Amc\AmcContract::COLOURS[$colour][1] }}">{{ \App\Models\Amc\AmcContract::COLOURS[$colour][0] }}</span>@endif
   <span class="sp"></span>
   @if (! $isNew && $u->can('amc-contract.add'))<a class="btn add sm" href="{{ route('amc.contract.create') }}"><svg class="ico"><use href="#i-plus"/></svg>Add new</a>@endif
-  <a class="btn gh sm" href="{{ route('amc.contracts.list') }}"><svg class="ico"><use href="#i-list"/></svg>AMC list</a>
+  <a class="btn gh sm" href="{{ route('reports.amc.report', ['in' => 'amc']) }}"><svg class="ico"><use href="#i-list"/></svg>AMC Report</a>
 </div>
 
 @include('amc.partials.errors')
@@ -60,7 +60,7 @@
               @foreach ($clients as $id => $name)<option value="{{ $id }}" @selected((string) $v('amc_client_id') === (string) $id)>{{ $name }}</option>@endforeach
             </select>
           </div>
-          <span class="hint txt">From the AMC Client Master.</span>
+          <span class="hint txt">From the AMC Client Inventory.</span>
           @include('partials.ferr', ['name' => 'amc_client_id'])
         </div>
         <div class="field amcdates">
@@ -78,7 +78,7 @@
           @if ($client)
             <div class="kv"><span>Business segment: <b>{{ $client->vertical?->name ?? '–' }}</b></span></div>
             @if ($client->lines->isEmpty())
-              <div class="cap muted">No location lines in the AMC Client Master.</div>
+              <div class="cap muted">No location lines in the AMC Client Inventory.</div>
             @else
               <div class="tablecard"><table class="atable rtable"><thead><tr><th>Location 1</th><th>Location 2</th><th>Planter</th><th class="r">Planter qty</th><th>Plant</th><th class="r">Plant qty</th></tr></thead><tbody>
                 @foreach ($client->lines as $l)
@@ -143,11 +143,11 @@
               @foreach ($gardeners as $id => $label)<option value="{{ $id }}" @selected((string) $v('gardener_id') === (string) $id)>{{ $label }}</option>@endforeach
             </select>
           </div>
-          <span class="hint txt">AMC employees whose role is Gardener. Shown on the AMC Client Master while this contract is Active.</span>
+          <span class="hint txt">AMC employees whose role is Gardener. Picking the customer fills in the client's gardener when this box is empty.</span>
           @include('partials.ferr', ['name' => 'gardener_id'])
         </div>
       </div>
-      <div class="ruleh"><svg class="ico"><use href="#i-info"/></svg><span>Fields marked * are mandatory. Dates as dd/mm/yyyy; the end date must be on or after the start date. On the AMC list a contract is Green while Active, Red when its end date is within {{ config('amc.due_days') }} days, Black once the end date has passed, Grey when Inactive.</span></div>
+      <div class="ruleh"><svg class="ico"><use href="#i-info"/></svg><span>Fields marked * are mandatory. Dates as dd/mm/yyyy; the end date must be on or after the start date. On the AMC Report a contract is Green while Active, Red when its end date is within {{ config('amc.due_days') }} days, Black once the end date has passed, Grey when Inactive.</span></div>
       </fieldset>
     </div>
   </div>
@@ -157,7 +157,7 @@
       <button class="btn sec" type="submit" form="amcDelForm" style="color:var(--error-700)"><svg class="ico"><use href="#i-x"/></svg>Delete contract</button>
     @endif
     <span class="sp"></span>
-    @if ($canSave)<button class="btn {{ $isNew ? 'add' : 'pri' }}" type="submit"><svg class="ico"><use href="#i-{{ $isNew ? 'plus' : 'check' }}"/></svg>{{ $isNew ? 'Add contract' : 'Save changes' }}</button>@endif
+    @if ($canSave)<button class="btn {{ $isNew ? 'add' : 'pri' }}" type="submit"><svg class="ico"><use href="#i-{{ $isNew ? 'plus' : 'check' }}"/></svg>Submit</button>@endif
   </div>
 </form>
 @if ($canDelete)

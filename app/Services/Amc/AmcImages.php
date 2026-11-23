@@ -34,8 +34,11 @@ class AmcImages
             if (! $info || $info[0] < 1 || $info[1] < 1) {
                 continue;
             }
-            $w = min($tileW, $info[0]);
-            $tiles[] = ['file' => $file, 'w' => $w, 'h' => (int) max(1, round($info[1] * $w / $info[0]))];
+            // A phone photo stored sideways (orientation tag 6 or 8) is drawn turned upright, so its width and height swap
+            // (re-test 21/11/2026: the tile was sized from the sideways header and the photo came out squashed).
+            [$iw, $ih] = abs(self::angle(self::path($file))) === 90 ? [$info[1], $info[0]] : [$info[0], $info[1]];
+            $w = min($tileW, $iw);
+            $tiles[] = ['file' => $file, 'w' => $w, 'h' => (int) max(1, round($ih * $w / $iw))];
         }
         if (! $tiles) {
             return null;
@@ -123,8 +126,7 @@ class AmcImages
     /** Phone photos are often stored sideways with an orientation tag; turn them upright before they are scaled. */
     private static function upright($img, string $path)
     {
-        $o = (int) (@exif_read_data($path)['Orientation'] ?? 1);
-        $angle = [3 => 180, 6 => -90, 8 => 90][$o] ?? 0;
+        $angle = self::angle($path);
         if ($angle) {
             $turned = imagerotate($img, $angle, 0);
             if ($turned) {
@@ -135,6 +137,18 @@ class AmcImages
         }
 
         return $img;
+    }
+
+    /** Degrees (for imagerotate) that turn a JPEG with an orientation tag upright: 180, -90, 90, or 0 when none is needed. */
+    private static function angle(string $path): int
+    {
+        $info = @getimagesize($path);
+        if (! $info || $info[2] !== IMAGETYPE_JPEG || ! function_exists('exif_read_data')) {
+            return 0;
+        }
+        $o = (int) (@exif_read_data($path)['Orientation'] ?? 1);
+
+        return [3 => 180, 6 => -90, 8 => 90][$o] ?? 0;
     }
 
     private static function jpeg($img): string

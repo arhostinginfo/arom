@@ -22,6 +22,24 @@ class AmcMasterController extends Controller
     {
     }
 
+    /** (22/11/2026) The Masters page: every AMC master the user may view, with how many rows it has. */
+    public function home(Request $request): View
+    {
+        $user = $request->user();
+        $cards = [];
+        foreach (config('amc.masters') as $key => $cfg) {
+            if ($user->can($cfg['perm'].'.view')) {
+                $cards[] = ['title' => $cfg['title'], 'hint' => $cfg['hint'], 'url' => route("amc.masters.$key.index"), 'count' => $cfg['model']::count(), 'key' => $key];
+            }
+        }
+        if ($user->can('amc-employee.view')) {
+            $cards[] = ['title' => 'AMC Employee master', 'hint' => 'Operation managers and gardeners with their photo; picked on contracts by their role.',
+                'url' => route('amc.employees.index'), 'count' => \App\Models\Amc\AmcEmployee::count(), 'key' => 'employees'];
+        }
+
+        return view('amc.masters.home', ['cards' => $cards]);
+    }
+
     public function show(Request $request, string $master): View
     {
         $cfg = AmcMasterService::config($master);

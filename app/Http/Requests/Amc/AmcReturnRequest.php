@@ -22,6 +22,9 @@ class AmcReturnRequest extends FormRequest
             'rate' => ($r = str_replace([',', '₹', ' '], '', (string) $this->input('rate'))) === '' ? null : $r,
             'return_remark' => ($t = trim((string) $this->input('return_remark'))) === '' ? null : $t,
             'replace_date' => ($d = trim((string) $this->input('replace_date'))) === '' ? null : $d,
+            // (22/11/2026, end-to-end test fix) the entry is a radio: none picked sends nothing. Without this, an edit that
+            // changes the Location (or customer) and picks no entry kept the old entry and its Location 1 / Location 2.
+            'amc_client_line_id' => $this->filled('amc_client_line_id') ? $this->input('amc_client_line_id') : null,
         ]);
     }
 
@@ -36,6 +39,8 @@ class AmcReturnRequest extends FormRequest
         return [
             'amc_client_id' => ['required', 'integer', Rule::exists('amc_clients', 'id')],
             'amc_client_line_id' => ['nullable', 'integer', Rule::exists('amc_client_lines', 'id')->where('amc_client_id', (int) $this->input('amc_client_id'))],
+            // (22/11/2026) Location 1 of the customer's lines, picked before the entry
+            'location_1' => ['nullable', 'string', 'max:150'],
             'request_date' => ['required', 'date_format:d/m/Y'],
             'replace_date' => ['nullable', 'date_format:d/m/Y'],
             'reported_by_id' => ['nullable', 'integer', Rule::exists('amc_employees', 'id')],
@@ -52,6 +57,18 @@ class AmcReturnRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $v) {
+            // (22/11/2026) Location 1 must be one of the customer's; a picked entry must be under it.
+            $loc1 = $this->input('location_1');
+            if ($loc1 !== null && $loc1 !== '' && ! $v->errors()->hasAny(['amc_client_id', 'location_1'])) {
+                $lines = \App\Models\Amc\AmcClientLine::where('amc_client_id', (int) $this->input('amc_client_id'));
+                if (! (clone $lines)->where('location_1', $loc1)->exists() && $loc1 !== $this->route('return')?->location_1) {
+                    $v->errors()->add('location_1', 'Choose a Location of this customer.');
+                } elseif ($this->input('amc_client_line_id') && ! $v->errors()->has('amc_client_line_id')
+                    && (clone $lines)->whereKey((int) $this->input('amc_client_line_id'))->value('location_1') !== $loc1) {
+                    $v->errors()->add('amc_client_line_id', 'Pick an entry under the chosen Location.');
+                }
+            }
+        }, function (Validator $v) {
             if ($v->errors()->hasAny(['request_date', 'replace_date']) || ! $this->input('replace_date')) {
                 return;
             }

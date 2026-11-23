@@ -9,6 +9,7 @@ use App\Http\Requests\Crm\ImportRequest;
 use App\Models\ActivityLog;
 use App\Models\Amc\AmcClient;
 use App\Models\Amc\AmcClientLine;
+use App\Models\Amc\AmcEmployee;
 use App\Models\Amc\AmcPlant;
 use App\Models\Amc\AmcPlanter;
 use App\Models\Amc\AmcVertical;
@@ -22,7 +23,7 @@ use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * AMC › AMC Client Master (21/11/2026): list paged, searched and filtered on the server (rule P1), a form with the
+ * AMC › AMC Client Inventory (21/11/2026): list paged, searched and filtered on the server (rule P1), a form with the
  * location lines, Import (CSV, whole file checked first) and Download CSV (one row per line, the import layout).
  */
 class AmcClientController extends Controller
@@ -35,7 +36,7 @@ class AmcClientController extends Controller
     {
         $q = LookupController::term($request);
         $vertical = $request->integer('vertical') ?: null;
-        $query = AmcClient::query()->with(['vertical:id,name', 'activeContract.gardener:id,name,code'])->withCount('lines')
+        $query = AmcClient::query()->with(['vertical:id,name', 'gardener:id,name,code', 'activeContract.gardener:id,name,code'])->withCount('lines')
             ->when($vertical, fn ($w) => $w->where('amc_vertical_id', $vertical))
             ->when($q !== '', fn ($w) => $w->where('name', 'like', LookupController::prefix($q)));
         [$sort, $dir] = ListQuery::sort($query, $request, ['name' => 'name', 'updated' => 'updated_at']);
@@ -105,16 +106,22 @@ class AmcClientController extends Controller
      */
     public function info(AmcClient $client): JsonResponse
     {
-        $client->load(['vertical:id,name', 'lines.planter:id,name', 'lines.plant:id,name,size', 'activeContract.type:id,name', 'activeContract.gardener:id,name,code']);
+        $client->load(['vertical:id,name', 'gardener:id,name,code,role,status', 'lines.planter:id,name', 'lines.plant:id,name,size', 'activeContract.type:id,name', 'activeContract.gardener:id,name,code']);
         $c = $client->activeContract;
+        // (22/11/2026, test fix) only an active Gardener is offered to a new contract / Return & Replace: one made
+        // Inactive or given another role since would be filled in and then refused on save.
+        $g = $client->gardener;
+        $g = $g && $g->status === 'Active' && $g->role === AmcEmployee::GARDENER ? $g : null;
 
         return response()->json([
             'id' => $client->id,
             'name' => $client->name,
             'segment' => $client->vertical?->name,
+            // (22/11/2026) the client's own gardener: a new contract starts with them
+            'gardener_id' => $g?->id, 'gardener' => $g?->label(),
             'lines' => $client->lines->map(fn (AmcClientLine $l) => [
-                'id' => $l->id, 'label' => $l->locationLabel(), 'location_1' => $l->location_1, 'location_2' => $l->location_2,
-                'planter' => $l->planter?->name, 'planter_qty' => $l->planter_qty, 'plant' => $l->plant?->label(), 'plant_qty' => $l->plant_qty,
+                'id' => $l->id, 'line_no' => $l->line_no, 'label' => $l->locationLabel(), 'location_1' => $l->location_1, 'location_2' => $l->location_2,
+                'planter' => $l->planter?->name, 'planter_qty' => $l->planter_qty, 'plant' => $l->plant?->label(), 'plant_id' => $l->amc_plant_id, 'plant_qty' => $l->plant_qty,
             ])->values(),
             'contract' => $c ? [
                 'id' => $c->id, 'number' => $c->number(), 'amc_type_id' => $c->amc_type_id, 'type' => $c->type?->name,
@@ -125,7 +132,11 @@ class AmcClientController extends Controller
 
     private function form(AmcClient $client): View
     {
-        $client->loadMissing(['lines', 'creator', 'updater', 'activeContract.gardener']);
+        $client->loadMissing(['lines', 'creator', 'updater', 'gardener', 'activeContract.gardener']);
+        $gardener = old('gardener_id', $client->gardener_id);
+        $party = old('party_id', $client->party_id);
+        $parties = AmcClientRequest::customerParties()->where(fn ($w) => $w->whereNotIn('id', AmcClient::query()->whereNotNull('party_id')->select('party_id')))
+            ->orderBy('name')->orderBy('id');
         $keepPlanters = $client->lines->pluck('amc_planter_id')->filter()->all();
         $keepPlants = $client->lines->pluck('amc_plant_id')->filter()->all();
 
@@ -133,6 +144,9 @@ class AmcClientController extends Controller
             'client' => $client,
             'verticals' => AmcVertical::forPicker(old('amc_vertical_id', $client->amc_vertical_id))->get(),
             'planters' => AmcPlanter::query()->where(fn ($w) => $w->where('is_active', true)->orWhereIn('id', $keepPlanters))->orderBy('name')->get(),
+            // (22/11/2026) Customer name: active customers of the Party master not yet in the AMC Client Inventory
+            'parties' => AmcLookupController::options($parties, $party, fn ($p) => $p->name),
+            'gardeners' => AmcLookupController::options(AmcEmployee::forPicker(AmcEmployee::GARDENER, $gardener), $gardener, fn ($e) => $e->label()),
             'plants' => AmcPlant::query()->where(fn ($w) => $w->where('is_active', true)->orWhereIn('id', $keepPlants))->orderBy('name')->get(),
             'history' => ActivityLog::history($client),
         ]);

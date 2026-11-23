@@ -103,7 +103,7 @@ class AmcReturnController extends Controller
     {
         $r->loadMissing(['creator', 'updater']);
         $keep = fn ($f) => old($f, $r->{$f});
-        $client = $keep('amc_client_id') ? AmcClient::with('lines')->find($keep('amc_client_id')) : null;
+        $client = $keep('amc_client_id') ? AmcClient::with(['lines.planter:id,name', 'lines.plant:id,name,size'])->find($keep('amc_client_id')) : null;
         $people = fn (?string $role, $selected) => AmcLookupController::options(AmcEmployee::forPicker($role, $selected), $selected, fn ($e) => $e->label());
 
         return view('amc.returns.form', [

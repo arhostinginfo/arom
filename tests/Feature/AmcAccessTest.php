@@ -31,7 +31,7 @@ class AmcAccessTest extends TestCase
         $groups = array_keys(config('nursery.pages'));
         $this->assertSame(['Dashboard', 'CRM', 'Sales', 'Purchase', 'Accounts', 'AMC', 'Admin', 'Reports'], $groups);
         $this->actingAs($this->admin())->get(route('admin.roles.create'))->assertOk()
-            ->assertSee('AMC Client Master · Import')->assertSee('Return &amp; Replace', false)->assertSee('AMC Employee master');
+            ->assertSee('AMC Client Inventory · Import')->assertSee('Return &amp; Replace', false)->assertSee('AMC Employee master');
     }
 
     public function test_user_without_amc_rights_gets_403_and_no_amc_menu(): void
@@ -51,7 +51,7 @@ class AmcAccessTest extends TestCase
 
         $html = $this->actingAs($u)->get('/dashboard')->assertOk()->getContent();
         $this->assertStringNotContainsString('id="tn-amc"', $html);
-        $this->assertStringNotContainsString('AMC Client Master', $html);
+        $this->assertStringNotContainsString('AMC Client Inventory', $html);
     }
 
     public function test_menu_shows_only_the_amc_pages_the_user_may_open(): void
@@ -61,9 +61,9 @@ class AmcAccessTest extends TestCase
         $this->assertMatchesRegularExpression('/<a class="tn on" id="tn-amc"/', $html);
         preg_match('/<div class="tndd" id="tndd-amc".*?<\/div>/s', $html, $m);
         $this->assertNotEmpty($m);
-        $this->assertStringContainsString('AMC Client Master', $m[0]);
+        $this->assertStringContainsString('AMC Client Inventory', $m[0]);
         $this->assertStringContainsString('Return &amp; Replace', $m[0]);
-        foreach (['Dashboard', 'Customer PO / AMC', 'AMC list', 'Plant master', 'AMC Employee master'] as $hidden) {
+        foreach (['Dashboard', 'AMC Tracker', 'AMC list', 'Plant master', 'AMC Employee master'] as $hidden) {
             $this->assertStringNotContainsString('>'.$hidden.'<', $m[0], $hidden);
         }
         // View only: no Add new, no Import on the client list.
@@ -78,14 +78,23 @@ class AmcAccessTest extends TestCase
         $admin = $this->admin();
         foreach (self::PAGES as $name) {
             $name === 'amc.contract.index'
-                // Customer PO / AMC opens a new contract for a user who may add one.
+                // AMC Tracker opens a new contract for a user who may add one.
                 ? $this->actingAs($admin)->get(route($name))->assertRedirect(route('amc.contract.create'))
                 : $this->actingAs($admin)->get(route($name))->assertSuccessful();
         }
         $html = $this->actingAs($admin)->get(route('amc.dashboard'))->getContent();
         preg_match('/<div class="tndd" id="tndd-amc".*?<\/div>/s', $html, $m);
-        foreach (['Dashboard', 'AMC Client Master', 'Customer PO / AMC', 'AMC list', 'Return &amp; Replace', 'Business segment master', 'Planter master', 'Plant master', 'AMC type master', 'AMC Employee master'] as $item) {
+        // (22/11/2026) The five masters are grouped under one "Masters" item.
+        foreach (['Dashboard', 'AMC Client Inventory', 'AMC Tracker', 'Return &amp; Replace', 'Masters'] as $item) {
             $this->assertStringContainsString('>'.$item.'<', $m[0], $item);
+        }
+        // (22/11/2026) the AMC list is now "AMC Report", under the AMC reports and on Reports, not a menu page
+        $this->assertStringNotContainsString('>AMC list<', $m[0]);
+        $this->assertStringContainsString('AMC reports', $html);
+        $this->assertStringContainsString('>AMC Report<', $html);
+        $this->assertStringContainsString(e(route('reports.amc.report', ['in' => 'amc'])), $html);
+        foreach (['Business segment master', 'Planter master', 'Plant master', 'AMC type master', 'AMC Employee master'] as $item) {
+            $this->assertStringNotContainsString('>'.$item.'<', $m[0], $item);
         }
     }
 

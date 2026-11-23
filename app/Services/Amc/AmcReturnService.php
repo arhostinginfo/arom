@@ -26,7 +26,7 @@ class AmcReturnService
             $before = $isNew ? [] : $this->snapshot($r);
             $r->fill(array_intersect_key($data, array_flip(self::FIELDS)));
             $line = $r->amc_client_line_id ? AmcClientLine::find($r->amc_client_line_id) : null;
-            $r->location_1 = $line?->location_1;
+            $r->location_1 = $line?->location_1 ?? (($data['location_1'] ?? '') !== '' ? $data['location_1'] : null);
             $r->location_2 = $line?->location_2;
             $r->plant_size = AmcPlant::find($r->amc_plant_id)?->size;
             if ($isNew) {

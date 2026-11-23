@@ -8,6 +8,9 @@
   $d = fn ($f) => old($f, $r->{$f}?->format($df));
   $lineId = old('amc_client_line_id', $r->amc_client_line_id);
   $line = $client?->lines->firstWhere('id', (int) $lineId);
+  // (22/11/2026) Location 1 is picked first; the entries of that Location 1 in the AMC Client Inventory show below it.
+  $loc1 = old('location_1', $line?->location_1 ?? ($isNew ? null : $r->location_1));
+  $loc1s = ($client?->lines ?? collect())->pluck('location_1')->filter(fn ($x) => $x !== null && $x !== '')->unique()->values();
   $plantId = $v('amc_plant_id');
   $plant = $plants->firstWhere('id', (int) $plantId);
 @endphp
@@ -42,24 +45,49 @@
               @foreach ($clients as $id => $name)<option value="{{ $id }}" @selected((string) $v('amc_client_id') === (string) $id)>{{ $name }}</option>@endforeach
             </select>
           </div>
-          <span class="hint txt" id="amcContractNote">From the AMC Client Master.</span>
+          <span class="hint txt" id="amcContractNote">From the AMC Client Inventory.</span>
           @include('partials.ferr', ['name' => 'amc_client_id'])
         </div>
-        <div class="field" style="grid-column:1/-1">
-          <label for="amc_client_line_id">Location (from the customer's lines)</label>
-          <select class="inp @error('amc_client_line_id') err @enderror" id="amc_client_line_id" name="amc_client_line_id">
+        <div class="field">
+          <label for="amc_location_1">Location</label>
+          <select class="inp @error('location_1') err @enderror" id="amc_location_1" name="location_1">
             <option value="">Select a location</option>
-            @foreach ($client?->lines ?? [] as $l)<option value="{{ $l->id }}" data-l1="{{ $l->location_1 }}" data-l2="{{ $l->location_2 }}" @selected((string) $lineId === (string) $l->id)>{{ $l->locationLabel() }}</option>@endforeach
+            @foreach ($loc1s as $o)<option @selected((string) $loc1 === (string) $o)>{{ $o }}</option>@endforeach
+            @if ($loc1 !== null && $loc1 !== '' && ! $loc1s->contains($loc1))<option selected>{{ $loc1 }}</option>@endif
           </select>
+          <span class="hint txt">From the customer's lines in the AMC Client Inventory.</span>
+          @include('partials.ferr', ['name' => 'location_1'])
+        </div>
+        <div class="field">
+          <label for="amc_client_line_id">Location 2 (entry)</label>
+          <select class="inp @error('amc_client_line_id') err @enderror" id="amc_client_line_id" name="amc_client_line_id">
+            <option value="">No entry</option>
+            @foreach (($client?->lines ?? collect())->filter(fn ($l) => $loc1 !== null && $loc1 !== '' && (string) $l->location_1 === (string) $loc1) as $l)
+              <option value="{{ $l->id }}" @selected((string) $lineId === (string) $l->id)>{{ $l->location_2 !== null && $l->location_2 !== '' ? $l->location_2 : 'Entry '.$l->line_no }}</option>
+            @endforeach
+          </select>
+          <span class="hint txt">The entry the return is for (optional); its plant fills the Plant box when that is empty.</span>
           @include('partials.ferr', ['name' => 'amc_client_line_id'])
         </div>
-        <div class="field">
-          <label for="location_1_show">Location 1</label>
-          <input class="inp" id="location_1_show" value="{{ $line?->location_1 ?? ($isNew ? '' : $r->location_1) }}" readonly tabindex="-1">
-        </div>
-        <div class="field">
-          <label for="location_2_show">Location 2</label>
-          <input class="inp" id="location_2_show" value="{{ $line?->location_2 ?? ($isNew ? '' : $r->location_2) }}" readonly tabindex="-1">
+        <div class="field" style="grid-column:1/-1" id="amcLocEntries" @if (! $loc1) hidden @endif>
+          <span class="lbl">Entries under this Location</span>
+          <div class="tablecard" style="overflow-x:auto">
+            <table class="atable rtable">
+              <thead><tr><th>Location 2</th><th>Planter</th><th class="r">Planter qty</th><th>Plant</th><th class="r">Plant qty</th></tr></thead>
+              <tbody id="amcLocRows">
+              @foreach ($client?->lines ?? [] as $l)
+                <tr data-id="{{ $l->id }}" data-l1="{{ $l->location_1 }}" data-l2="{{ $l->location_2 }}" data-no="{{ $l->line_no }}" data-plant="{{ $l->amc_plant_id }}" @class(['sel' => (string) $lineId === (string) $l->id]) @if ((string) $l->location_1 !== (string) $loc1) hidden @endif>
+                  <td data-label="Location 2">{{ $l->location_2 }}</td>
+                  <td data-label="Planter">{{ $l->planter?->name }}</td>
+                  <td data-label="Planter qty" class="r num">{{ $l->planter_qty }}</td>
+                  <td data-label="Plant">{{ $l->plant?->label() }}</td>
+                  <td data-label="Plant qty" class="r num">{{ $l->plant_qty }}</td>
+                </tr>
+              @endforeach
+              </tbody>
+            </table>
+          </div>
+          <span class="hint txt">The entry picked in Location 2 is marked.</span>
         </div>
         <div class="field">
           <label for="request_date">Request date<span class="req">*</span></label>
@@ -149,7 +177,7 @@
       <button class="btn sec" type="submit" form="rrDelForm" style="color:var(--error-700)"><svg class="ico"><use href="#i-x"/></svg>Delete entry</button>
     @endif
     <span class="sp"></span>
-    @if ($canSave)<button class="btn {{ $isNew ? 'add' : 'pri' }}" type="submit"><svg class="ico"><use href="#i-{{ $isNew ? 'plus' : 'check' }}"/></svg>{{ $isNew ? 'Add entry' : 'Save changes' }}</button>@endif
+    @if ($canSave)<button class="btn {{ $isNew ? 'add' : 'pri' }}" type="submit"><svg class="ico"><use href="#i-{{ $isNew ? 'plus' : 'check' }}"/></svg>Submit</button>@endif
   </div>
 </form>
 @if (! $isNew && $u->can('amc-return.delete'))
