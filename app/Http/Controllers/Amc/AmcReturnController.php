@@ -109,6 +109,8 @@ class AmcReturnController extends Controller
         return view('amc.returns.form', [
             'r' => $r,
             'client' => $client,
+            // (23/11/2026) what has been replaced so far, per entry
+            'replaced' => $client ? \App\Services\Amc\AmcReturnService::replaceStatus($client->id, $r->id) : ['' => []],
             'clients' => AmcLookupController::options(AmcClient::query()->orderBy('name')->orderBy('id'), $keep('amc_client_id'), fn ($m) => $m->name),
             'types' => AmcType::forPicker($keep('amc_type_id'))->get(),
             'plants' => AmcPlant::forPicker($keep('amc_plant_id'))->get(),

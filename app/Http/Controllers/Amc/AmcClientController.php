@@ -104,10 +104,13 @@ class AmcClientController extends Controller
      * A client's details for the contract and Return & Replace pages: segment, location lines and, from its current
      * Active contract, the AMC type and gardener.
      */
-    public function info(AmcClient $client): JsonResponse
+    public function info(Request $request, AmcClient $client): JsonResponse
     {
         $client->load(['vertical:id,name', 'gardener:id,name,code,role,status', 'lines.planter:id,name', 'lines.plant:id,name,size', 'activeContract.type:id,name', 'activeContract.gardener:id,name,code']);
         $c = $client->activeContract;
+        // (23/11/2026, test fix) the Return & Replace edit page leaves out the return being edited, also when the customer is re-picked
+        $done = \App\Services\Amc\AmcReturnService::replaceStatus($client->id, $request->integer('except') ?: null);
+        $none = \App\Services\Amc\AmcReturnService::statusOf([]);
         // (22/11/2026, test fix) only an active Gardener is offered to a new contract / Return & Replace: one made
         // Inactive or given another role since would be filled in and then refused on save.
         $g = $client->gardener;
@@ -122,7 +125,10 @@ class AmcClientController extends Controller
             'lines' => $client->lines->map(fn (AmcClientLine $l) => [
                 'id' => $l->id, 'line_no' => $l->line_no, 'label' => $l->locationLabel(), 'location_1' => $l->location_1, 'location_2' => $l->location_2,
                 'planter' => $l->planter?->name, 'planter_qty' => $l->planter_qty, 'plant' => $l->plant?->label(), 'plant_id' => $l->amc_plant_id, 'plant_qty' => $l->plant_qty,
+                'replaced' => $done[$l->id] ?? $none,
             ])->values(),
+            // (23/11/2026) returns made for a Location without picking an entry, per Location
+            'location_returns' => (object) $done[''],
             'contract' => $c ? [
                 'id' => $c->id, 'number' => $c->number(), 'amc_type_id' => $c->amc_type_id, 'type' => $c->type?->name,
                 'gardener_id' => $c->gardener_id, 'gardener' => $c->gardener?->label(),

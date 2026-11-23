@@ -29,7 +29,7 @@
 @include('amc.partials.errors')
 
 <form method="POST" action="{{ $isNew ? route('amc.returns.store') : route('amc.returns.update', $r) }}" novalidate data-dirty-guard data-saving id="amcReturnForm"
-  data-info-url="{{ route('amc.clients.info', ['client' => '__ID__']) }}">
+  data-info-url="{{ route('amc.clients.info', ['client' => '__ID__'] + ($isNew ? [] : ['except' => $r->id])) }}">
   @csrf
   @unless ($isNew) @method('PUT') @endunless
   <div class="sectcard">
@@ -69,11 +69,12 @@
           <span class="hint txt">The entry the return is for (optional); its plant fills the Plant box when that is empty.</span>
           @include('partials.ferr', ['name' => 'amc_client_line_id'])
         </div>
-        <div class="field" style="grid-column:1/-1" id="amcLocEntries" @if (! $loc1) hidden @endif>
+        <div class="field" style="grid-column:1/-1" id="amcLocEntries" data-loc-returns='@json((object) ($replaced[''] ?? []))' @if (! $loc1) hidden @endif>
           <span class="lbl">Entries under this Location</span>
+          <p class="hint txt" id="amcLocSummary" aria-live="polite"></p>
           <div class="tablecard" style="overflow-x:auto">
             <table class="atable rtable">
-              <thead><tr><th>Location 2</th><th>Planter</th><th class="r">Planter qty</th><th>Plant</th><th class="r">Plant qty</th></tr></thead>
+              <thead><tr><th>Location 2</th><th>Planter</th><th class="r">Planter qty</th><th>Plant</th><th class="r">Plant qty</th><th>Replaced so far</th></tr></thead>
               <tbody id="amcLocRows">
               @foreach ($client?->lines ?? [] as $l)
                 <tr data-id="{{ $l->id }}" data-l1="{{ $l->location_1 }}" data-l2="{{ $l->location_2 }}" data-no="{{ $l->line_no }}" data-plant="{{ $l->amc_plant_id }}" @class(['sel' => (string) $lineId === (string) $l->id]) @if ((string) $l->location_1 !== (string) $loc1) hidden @endif>
@@ -82,6 +83,8 @@
                   <td data-label="Planter qty" class="r num">{{ $l->planter_qty }}</td>
                   <td data-label="Plant">{{ $l->plant?->label() }}</td>
                   <td data-label="Plant qty" class="r num">{{ $l->plant_qty }}</td>
+                  @php($st = $replaced[$l->id] ?? \App\Services\Amc\AmcReturnService::statusOf([]))
+                  <td data-label="Replaced so far" data-state="{{ $st['state'] }}"><span class="badge {{ ['done' => 'b-ok', 'open' => 'b-warn'][$st['state']] ?? 'b-neu' }}">{{ $st['text'] }}</span></td>
                 </tr>
               @endforeach
               </tbody>

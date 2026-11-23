@@ -123,6 +123,19 @@ if(rForm){
   var rc=$('#amc_client_id',rForm),loc=$('#amc_location_1',rForm),box=$('#amcLocEntries',rForm),rows=$('#amcLocRows',rForm),entry=$('#amc_client_line_id',rForm),
       type=$('#amc_type_id',rForm),gard=$('#gardener_id',rForm),plant=$('#amc_plant_id',rForm),size=$('#plant_size_show',rForm),note=$('#amcContractNote',rForm);
   var ensure=function(sel,id,label){if(!sel||!id)return;id=String(id);if(![].some.call(sel.options,function(o){return o.value===id})){var o=document.createElement('option');o.value=id;o.textContent=label||id;sel.appendChild(o)}};
+  var sumEl=$('#amcLocSummary',rForm),badgeCls={done:'b-ok',open:'b-warn'};
+  var stCell=function(st){st=st||{state:'none',text:'Not replaced yet'};return '<td data-label="Replaced so far" data-state="'+esc(st.state)+'"><span class="badge '+(badgeCls[st.state]||'b-neu')+'">'+esc(st.text)+'</span></td>'};
+  // (23/11/2026) For the chosen Location: how many entries, how many replaced, open or not replaced yet.
+  var summary=function(){
+    if(!sumEl)return;
+    var v=loc.value,vis=$$('tr',rows).filter(function(tr){return v!==''&&tr.dataset.l1===v}),n={done:0,open:0,none:0};
+    vis.forEach(function(tr){var c=tr.querySelector('[data-state]');n[c?c.dataset.state:'none']++});
+    if(!v){sumEl.textContent='';return}
+    var t=v+': '+vis.length+' entr'+(vis.length===1?'y':'ies')+' · '+n.done+' replaced · '+n.open+' with an open request · '+n.none+' not replaced yet';
+    var lr={};try{lr=JSON.parse(box.dataset.locReturns||'{}')}catch(e){}
+    if(Object.prototype.hasOwnProperty.call(lr,v)&&lr[v])t+='. Returns for the Location without an entry: '+lr[v].text;
+    sumEl.textContent=t;
+  };
   var rowOf=function(id){return $$('tr',rows).filter(function(tr){return tr.dataset.id===String(id)})[0]};
   // The Location's entries become the options of Location 2 (entry); its table rows show below.
   var showLoc=function(){
@@ -132,6 +145,7 @@ if(rForm){
     entry.innerHTML='<option value="">No entry</option>';
     vis.forEach(function(tr){var o=document.createElement('option');o.value=tr.dataset.id;o.textContent=tr.dataset.l2||('Entry '+tr.dataset.no);entry.appendChild(o)});
     entry.value=vis.some(function(tr){return tr.dataset.id===keep})?keep:(vis.length===1?vis[0].dataset.id:'');
+    summary();
     showPick();
   };
   var showPick=function(){
@@ -151,9 +165,10 @@ if(rForm){
         var tr=document.createElement('tr');tr.dataset.id=l.id;tr.dataset.l1=k;tr.dataset.l2=l.location_2||'';tr.dataset.no=l.line_no||'';tr.dataset.plant=l.plant_id||'';tr.hidden=true;
         tr.innerHTML='<td data-label="Location 2">'+esc(l.location_2)+
           '</td><td data-label="Planter">'+esc(l.planter)+'</td><td data-label="Planter qty" class="r num">'+esc(l.planter_qty)+'</td><td data-label="Plant">'+esc(l.plant)+
-          '</td><td data-label="Plant qty" class="r num">'+esc(l.plant_qty)+'</td>';
+          '</td><td data-label="Plant qty" class="r num">'+esc(l.plant_qty)+'</td>'+stCell(l.replaced);
         rows.appendChild(tr);
       });
+      box.dataset.locReturns=JSON.stringify(d.location_returns||{});
       var keys=Object.keys(seen);if(keys.length===1){loc.value=keys[0]}
       showLoc();
       var gid=d.contract?(d.contract.gardener_id||d.gardener_id):d.gardener_id,glabel=d.contract&&d.contract.gardener_id?d.contract.gardener:d.gardener;
@@ -165,6 +180,7 @@ if(rForm){
     });
   });
   loc.addEventListener('change',showLoc);
+  summary();
   entry.addEventListener('change',showPick);
   if(plant&&size)plant.addEventListener('change',function(){var o=plant.options[plant.selectedIndex];size.value=o&&o.dataset.size||''});
 }

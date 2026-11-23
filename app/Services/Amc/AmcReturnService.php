@@ -76,4 +76,44 @@ class AmcReturnService
             'Quality' => $r->quality,
         ];
     }
+    /**
+     * (23/11/2026) What has been returned and replaced so far, per entry of the client, for the Return & Replace page:
+     * line id => ['state' => done|open|none, 'text' => ...]. A return with a Replace date is replaced; one without is
+     * still open. Key '' holds the returns made for a Location without picking an entry, per Location. The return being
+     * edited is left out.
+     */
+    public static function replaceStatus(int $clientId, ?int $exceptId = null): array
+    {
+        $out = ['' => []];
+        $returns = AmcReturn::where('amc_client_id', $clientId)->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+            ->get(['id', 'amc_client_line_id', 'location_1', 'request_date', 'replace_date', 'qty']);
+        foreach ($returns->whereNotNull('amc_client_line_id')->groupBy('amc_client_line_id') as $lineId => $rs) {
+            $out[$lineId] = self::statusOf($rs);
+        }
+        foreach ($returns->whereNull('amc_client_line_id')->groupBy(fn ($r) => (string) $r->location_1) as $loc => $rs) {
+            $out[''][$loc] = self::statusOf($rs);
+        }
+
+        return $out;
+    }
+
+    /** The status of one group of returns; ['state' => 'none', 'text' => 'Not replaced yet'] when there is none. */
+    public static function statusOf($rs): array
+    {
+        $rs = collect($rs);
+        $done = $rs->whereNotNull('replace_date');
+        $open = $rs->whereNull('replace_date');
+        $parts = [];
+        if ($done->count()) {
+            $parts[] = 'Replaced '.$done->count().'× ('.$done->sum('qty').' qty), last '.$done->max('replace_date')->format('d/m/Y');
+        }
+        if ($open->count()) {
+            $parts[] = $open->count().' open request'.($open->count() > 1 ? 's' : '').' since '.$open->min('request_date')->format('d/m/Y');
+        }
+
+        return [
+            'state' => $open->count() ? 'open' : ($done->count() ? 'done' : 'none'),
+            'text' => $parts ? implode(' · ', $parts) : 'Not replaced yet',
+        ];
+    }
 }
