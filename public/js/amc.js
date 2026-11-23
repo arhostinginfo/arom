@@ -73,6 +73,23 @@ if(locs&&rowTpl&&locTpl){
   $$('[data-add-loc]').forEach(function(b){b.addEventListener('click',function(){
     locs.insertAdjacentHTML('beforeend',locTpl.innerHTML);var block=locs.lastElementChild;addRow(block);$('[data-loc1]',block).focus();
   })});
+  // (24/11/2026) Rate from the chosen plant (Plant master), Amount = Rate x Plant qty, totals per Location and for the customer
+  var ifmt=function(n){return n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})};
+  var invCalc=function(){var all=0;
+    $$('[data-loc]',locs).forEach(function(block){var sum=0;
+      $$('[data-inv-row]',block).forEach(function(tr){
+        var s=tr.querySelector('[data-inv-plant]'),o=s&&s.selectedIndex>=0?s.options[s.selectedIndex]:null,rate=o&&o.dataset.rate!==undefined&&o.dataset.rate!==''?parseFloat(o.dataset.rate):NaN;
+        var q=tr.querySelector('[data-inv-qty]'),n=q&&/^\d+$/.test(q.value.trim())?parseInt(q.value,10):NaN;
+        var amt=!isNaN(rate)&&!isNaN(n)?rate*n:null;if(amt!==null)sum+=amt;
+        var r=tr.querySelector('[data-inv-rate]'),a=tr.querySelector('[data-inv-amount]');
+        if(r)r.textContent=isNaN(rate)?'':ifmt(rate);if(a)a.textContent=amt===null?'':ifmt(amt)});
+      var t=block.querySelector('[data-inv-loctotal]');if(t)t.textContent=ifmt(sum);all+=sum});
+    var g=$('#amcInvTotal');if(g)g.textContent=ifmt(all)};
+  locs.addEventListener('input',function(e){if(e.target.matches('[data-inv-qty]'))invCalc()});
+  locs.addEventListener('change',function(e){if(e.target.matches('[data-inv-plant],[data-inv-qty]'))invCalc()});
+  locs.addEventListener('click',function(e){if(e.target.closest('button'))setTimeout(invCalc,0)});
+  $$('[data-add-loc]').forEach(function(b){b.addEventListener('click',function(){setTimeout(invCalc,0)})});
+  invCalc(); // values the browser restored after Back / refresh
   // The copies are set again before sending, in case a value was pasted or autofilled without an input event.
   var form=locs.closest('form');if(form)form.addEventListener('submit',function(){$$('[data-loc]',locs).forEach(sync)});
 }

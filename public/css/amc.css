@@ -91,3 +91,6 @@ table.amclist tr.c-red td.amcend{color:var(--error-700);font-weight:600}
 
 /* Return & Replace (22/11/2026): the entry picked in Location 2 (entry) is marked in the table. */
 #amcLocRows tr.sel td{background:var(--primary-50);font-weight:600}
+
+/* (24/11/2026) AMC Client Inventory: total amount of the customer */
+.amcinvtotal{text-align:right;padding:4px 2px}

@@ -75,6 +75,11 @@
         $groups = [];
         foreach ($lines as $i => $l) { $groups[(string) ($l['location_1'] ?? '')][$i] = $l; }
         $nextKey = $lines ? max(array_map('intval', array_keys($lines))) + 1 : 1;
+        // (24/11/2026) Amount = Rate (Plant master) x Plant qty, summed per Location and for the customer
+        $locTotal = fn ($rows) => array_sum(array_map(function ($l) use ($plants) {
+            $r = ! empty($l['amc_plant_id']) ? $plants->firstWhere('id', (int) $l['amc_plant_id'])?->rate : null;
+            return $r !== null && preg_match('/^\d+$/', trim((string) ($l['plant_qty'] ?? ''))) ? (float) $r * (int) $l['plant_qty'] : 0;
+        }, $rows));
       @endphp
       <div class="lbl">Locations, planters and plants</div>
       <div id="amcLocs" class="amclocs" data-next="{{ $nextKey }}">
@@ -91,21 +96,23 @@
             </div>
             <div class="tablecard" style="overflow-x:auto">
               <table class="atable lines rtable">
-                <thead><tr><th style="min-width:150px">Location 2</th><th style="min-width:150px">Planter</th><th class="r" style="min-width:90px">Planter qty</th><th style="min-width:150px">Plant</th><th class="r" style="min-width:90px">Plant qty</th><th><span class="sr">Remove</span></th></tr></thead>
+                <thead><tr><th style="min-width:150px">Location 2</th><th style="min-width:150px">Planter</th><th class="r" style="min-width:90px">Planter qty</th><th style="min-width:150px">Plant</th><th class="r" style="min-width:90px">Plant qty</th><th class="r" style="min-width:90px">Rate (₹)</th><th class="r" style="min-width:100px">Amount (₹)</th><th><span class="sr">Remove</span></th></tr></thead>
                 <tbody data-rows>
                   @foreach ($rows as $i => $l)
                     @include('amc.clients.line-row', ['i' => $i, 'l' => $l, 'loc1' => $loc1])
                   @endforeach
                 </tbody>
+                <tfoot><tr><td colspan="6" class="r"><b>Location total</b></td><td class="r num"><b data-inv-loctotal>{{ \App\Support\Money::indian($locTotal($rows), 2) }}</b></td><td></td></tr></tfoot>
               </table>
             </div>
             @if ($canSave)<div><button class="btn gh sm" type="button" data-add-row><svg class="ico"><use href="#i-plus"/></svg>Add row under this location</button></div>@endif
           </div>
         @endforeach
       </div>
+      <div class="amcinvtotal r"><b>Total amount (₹): <span id="amcInvTotal">{{ \App\Support\Money::indian(array_sum(array_map($locTotal, $groups)), 2) }}</span></b></div>
       @include('partials.ferr', ['name' => 'lines'])
       @if ($canSave)<div><button class="btn add sm" type="button" data-add-loc><svg class="ico"><use href="#i-plus"/></svg>Add Location</button></div>@endif
-      <div class="ruleh"><svg class="ico"><use href="#i-info"/></svg><span>Fields marked * are mandatory. The customer name cannot repeat. Type each Location once (for example "Tower A") and add its entries below it: Location 2 (for example "Floor 5 - Lobby"), a planter and a plant with their quantities. An empty entry is not saved. Planter and Plant come from their AMC masters.</span></div>
+      <div class="ruleh"><svg class="ico"><use href="#i-info"/></svg><span>Fields marked * are mandatory. The customer name cannot repeat. Type each Location once (for example "Tower A") and add its entries below it: Location 2 (for example "Floor 5 - Lobby"), a planter and a plant with their quantities. An empty entry is not saved. Planter and Plant come from their AMC masters; the Rate comes from the Plant master and Amount is Rate × Plant qty.</span></div>
       </fieldset>
     </div>
   </div>
@@ -126,8 +133,9 @@
     </div>
     <div class="tablecard" style="overflow-x:auto">
       <table class="atable lines rtable">
-        <thead><tr><th style="min-width:150px">Location 2</th><th style="min-width:150px">Planter</th><th class="r" style="min-width:90px">Planter qty</th><th style="min-width:150px">Plant</th><th class="r" style="min-width:90px">Plant qty</th><th><span class="sr">Remove</span></th></tr></thead>
+        <thead><tr><th style="min-width:150px">Location 2</th><th style="min-width:150px">Planter</th><th class="r" style="min-width:90px">Planter qty</th><th style="min-width:150px">Plant</th><th class="r" style="min-width:90px">Plant qty</th><th class="r" style="min-width:90px">Rate (₹)</th><th class="r" style="min-width:100px">Amount (₹)</th><th><span class="sr">Remove</span></th></tr></thead>
         <tbody data-rows></tbody>
+        <tfoot><tr><td colspan="6" class="r"><b>Location total</b></td><td class="r num"><b data-inv-loctotal>0.00</b></td><td></td></tr></tfoot>
       </table>
     </div>
     <div><button class="btn gh sm" type="button" data-add-row><svg class="ico"><use href="#i-plus"/></svg>Add row under this location</button></div>
