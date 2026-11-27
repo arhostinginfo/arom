@@ -187,6 +187,26 @@ class QuotationLabelsAndBoqTest extends TestCase
         $this->assertSame([$rev->id], Document::pluck('documentable_id')->all());
     }
 
+    /** (27/11/2026) After an error (a wrong BOQ file) the items typed on the page (sent as lines_json) are shown again. */
+    public function test_typed_items_come_back_after_an_error(): void
+    {
+        $admin = $this->admin();
+        $payload = $this->newQuotationPayload(['boq_file' => UploadedFile::fake()->create('run.exe', 10)]);
+        $payload['lines_json'] = json_encode([['item_no' => 'TYPED-77', 'description' => 'Typed areca palm', 'qty' => '7', 'uom' => 'Nos', 'rate' => '120', 'discount_percent' => '', 'tax_structure_id' => '']]);
+        unset($payload['lines']);
+        $this->actingAs($admin)->from('/crm/quotations/create')->post('/crm/quotations', $payload)->assertSessionHasErrors('boq_file');
+        $html = $this->actingAs($admin)->get('/crm/quotations/create')->assertOk()->getContent();
+        $this->assertStringContainsString('value="TYPED-77"', $html);
+        $this->assertStringContainsString('value="Typed areca palm"', $html);
+    }
+
+    /** (27/11/2026) The Dashboard's Delivery overdue tile opens the list filtered to the overdue deliveries. */
+    public function test_delivery_overdue_tile_opens_overdue_only(): void
+    {
+        $html = $this->actingAs($this->admin())->get('/dashboard')->assertOk()->getContent();
+        $this->assertStringContainsString(e(route('crm.customer-pos.deliveries', ['show' => 'overdue'])), $html);
+    }
+
     public function test_customer_po_site_label_is_unchanged(): void
     {
         $this->assertSame('Site', config('nursery.page_fields.customer-po.fields.site.label'));

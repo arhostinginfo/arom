@@ -39,7 +39,7 @@
     @can('customer-po.view')
     {{-- (26/11/2026) in red while any PO delivery is overdue; opens the pending deliveries --}}
     @php($dOver = $d['kpis']['delivery_overdue'] ?? 0)
-    <a class="card kpi {{ $dOver ? 'kpidue' : '' }}" href="{{ route('crm.customer-pos.deliveries') }}"><span class="ovl">Delivery overdue</span><span class="v">@if ($dOver)<svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>@endif{{ $num($dOver) }}</span><span class="d">POs past their target / revised delivery date</span></a>
+    <a class="card kpi {{ $dOver ? 'kpidue' : '' }}" href="{{ route('crm.customer-pos.deliveries', ['show' => 'overdue']) }}"><span class="ovl">Delivery overdue</span><span class="v">@if ($dOver)<svg class="ico" aria-hidden="true"><use href="#i-alert"/></svg>@endif{{ $num($dOver) }}</span><span class="d">POs past their target / revised delivery date</span></a>
     @endcan
     <a class="card kpi" href="{{ route('crm.enquiries.list', ['view' => 'closing']) }}"><span class="ovl">Expected closing this month</span><span class="v">{{ $num($d['kpis']['closing']) }}</span><span class="d">{{ $money($d['kpis']['closing_value']) }} estimated</span></a>
   </div>

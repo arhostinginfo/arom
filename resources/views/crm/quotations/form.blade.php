@@ -47,7 +47,10 @@
     if (str_starts_with($val, 'old:') && is_numeric($r = substr($val, 4))) { $h .= '<option value="'.e($val).'" data-rate="'.e($r).'" selected>'.e($r).'% (old)</option>'; }
     return $h;
   };
-  $lines = old('lines', $quotation->exists
+  // (27/11/2026) After an error, show the items as typed: the page sends them as "lines_json" (like the PO form).
+  $oldLines = old('lines') ?: json_decode((string) old('lines_json', ''), true);
+  $oldLines = is_array($oldLines) ? array_values(array_map(fn ($l) => array_map(fn ($x) => is_scalar($x) ? $x : null, $l), array_filter($oldLines, 'is_array'))) : null;
+  $lines = $oldLines ?: ($quotation->exists
     ? $quotation->lines->map(fn ($l) => [
         'item_no' => $l->item_no, 'description' => $l->description,
         'qty' => $num($l->qty ?? $l->annual_volume), 'uom' => $l->uom, 'rate' => $num($l->rate),

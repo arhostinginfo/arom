@@ -220,7 +220,7 @@ class CustomerPoDeliveryTest extends TestCase
         Cache::flush();
 
         $dash = $this->actingAs($this->admin())->get('/dashboard')->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('#<a class="card kpi kpidue" href="'.preg_quote(route('crm.customer-pos.deliveries'), '#').'"><span class="ovl">Delivery overdue</span><span class="v"><svg[^>]*><use href="\#i-alert"/></svg>2</span>#', $dash);
+        $this->assertMatchesRegularExpression('#<a class="card kpi kpidue" href="'.preg_quote(e(route('crm.customer-pos.deliveries', ['show' => 'overdue'])), '#').'"><span class="ovl">Delivery overdue</span><span class="v"><svg[^>]*><use href="\#i-alert"/></svg>2</span>#', $dash);
 
         $page = $this->actingAs($this->admin())->get(route('crm.customer-pos.deliveries'))->assertOk()->getContent();
         foreach (['Client name', 'PO no', 'Target delivery date', 'Revised delivery date'] as $h) {
