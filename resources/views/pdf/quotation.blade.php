@@ -46,8 +46,8 @@
   <tr><td class="k">Client</td><td><b>{{ $q->customerName() }}</b>
     @if ($q->prospect && ! $q->party && $q->prospect->address)<br>{{ $q->prospect->address }}@endif
   </td>
-  <td class="k">Site</td><td>{{ $q->site }}</td></tr>
-  <tr><td class="k">Contact</td><td>{{ $q->contact_name }}@if ($ph = $q->enquiry?->clientPhone()){{ $q->contact_name ? ', ' : '' }}{{ $ph }}@endif</td><td class="k">Prepared by</td><td>{{ $q->preparer?->name ?? $q->salesPerson?->name }}</td></tr>
+  <td class="k">Site Name</td><td>{{ $q->site }}</td></tr>
+  <tr><td class="k">Contact Person</td><td>{{ $q->contact_name }}@if ($ph = $q->enquiry?->clientPhone()){{ $q->contact_name ? ', ' : '' }}{{ $ph }}@endif</td><td class="k">Prepared by</td><td>{{ $q->preparer?->name ?? $q->salesPerson?->name }}</td></tr>
   <tr><td class="k">Sales person</td><td>{{ $q->salesPerson?->name }}</td><td class="k">Currency</td><td>{{ $cur }}</td></tr>
 </table>
 

@@ -182,6 +182,10 @@ class CustomerPoRequest extends FormRequest
                 'po_quantity' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
                 'valid_from' => ['nullable', 'date_format:d/m/Y'],
                 'valid_to' => ['nullable', 'date_format:d/m/Y'],
+                'target_delivery_date' => ['nullable', 'date_format:d/m/Y'],
+                'revised_delivery_date' => ['nullable', 'date_format:d/m/Y'],
+                'revised_reason' => ['nullable', 'string', 'max:255'],
+                'delivered_on' => ['nullable', 'date_format:d/m/Y'],
                 'payment_terms' => ['nullable', 'string', 'max:255'],
                 'tax_terms' => ['nullable', 'string', 'max:150'],
                 'contact_name' => ['nullable', 'string', 'max:150'],
@@ -197,6 +201,7 @@ class CustomerPoRequest extends FormRequest
             $current = $this->current();
             $this->checkQuotation($v, $current);
             $this->checkLines($v, $current);
+            $this->checkDelivery($v, $current);
 
             // Validity hidden in Admin > Page setup: the dates are not read, so not compared either.
             if (! app(PageSetupService::class)->visible('customer-po', 'validity')) {
@@ -209,6 +214,39 @@ class CustomerPoRequest extends FormRequest
                 $v->errors()->add('valid_to', 'The end date must be on or after the start date.');
             }
         }];
+    }
+
+    /**
+     * (26/11/2026) Delivery dates. A Revised delivery date can be given once the Target delivery date has passed (or kept
+     * as it was saved), must be after the target and needs its reason. Delivered on cannot be in the future.
+     */
+    private function checkDelivery(Validator $v, ?CustomerPo $current): void
+    {
+        $ps = app(PageSetupService::class);
+        $date = fn ($f) => ($s = $this->input($f)) && ! $v->errors()->has($f) && is_string($s) ? \Illuminate\Support\Carbon::createFromFormat('d/m/Y', $s)->startOfDay() : null;
+        $target = $ps->visible('customer-po', 'target_delivery_date') ? $date('target_delivery_date') : $current?->target_delivery_date;
+        if ($ps->visible('customer-po', 'delivery_revision') && ($revised = $date('revised_delivery_date'))) {
+            $kept = $current?->revised_delivery_date && $current->revised_delivery_date->isSameDay($revised);
+            if (! $target) {
+                $v->errors()->add('revised_delivery_date', 'Enter the target delivery date first.');
+            } elseif (! $kept && ! $target->lt(today())) {
+                $v->errors()->add('revised_delivery_date', 'A revised delivery date can be added once the target delivery date ('.$target->format('d/m/Y').') has passed.');
+            } elseif (! $revised->gt($target)) {
+                $v->errors()->add('revised_delivery_date', 'The revised delivery date must be after the target delivery date.');
+            }
+            if (trim((string) $this->input('revised_reason')) === '' && ! $v->errors()->has('revised_reason')) {
+                $v->errors()->add('revised_reason', 'Enter the reason for the revised delivery date.');
+            }
+        } elseif ($ps->required('customer-po', 'delivery_revision') && ! $v->errors()->has('revised_delivery_date') && $target && $target->lt(today())) {
+            // Mandatory in Admin > Page setup: needed once the target has passed, unless delivered by the target date.
+            $done = $ps->visible('customer-po', 'delivered_on') ? $date('delivered_on') : $current?->delivered_on;
+            if (! $done || $done->gt($target)) {
+                $v->errors()->add('revised_delivery_date', 'The target delivery date ('.$target->format('d/m/Y').') has passed: enter the revised delivery date.');
+            }
+        }
+        if ($ps->visible('customer-po', 'delivered_on') && ($done = $date('delivered_on')) && $done->gt(today())) {
+            $v->errors()->add('delivered_on', 'The delivered date cannot be in the future.');
+        }
     }
 
     /**
@@ -297,6 +335,9 @@ class CustomerPoRequest extends FormRequest
             'po_date.date_format' => 'Enter the PO date as dd/mm/yyyy.',
             'valid_from.date_format' => 'Enter the start date as dd/mm/yyyy.',
             'valid_to.date_format' => 'Enter the end date as dd/mm/yyyy.',
+            'target_delivery_date.date_format' => 'Enter the target delivery date as dd/mm/yyyy.',
+            'revised_delivery_date.date_format' => 'Enter the revised delivery date as dd/mm/yyyy.',
+            'delivered_on.date_format' => 'Enter the delivered date as dd/mm/yyyy.',
             'received_date.date_format' => 'Enter the received date as dd/mm/yyyy.',
             'po_value.numeric' => 'Enter the PO value as a number.',
             'doc_category.required_with' => 'Choose what kind of document this is.',

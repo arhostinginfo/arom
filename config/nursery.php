@@ -303,8 +303,8 @@ return [
             'module' => 'crm',
             'fields' => [
                 'enquiry_id' => ['label' => 'Enquiry (client)', 'required' => true, 'fixed' => true],
-                'contact_name' => ['label' => 'Contact', 'required' => false],
-                'site' => ['label' => 'Site', 'required' => false],
+                'contact_name' => ['label' => 'Contact Person', 'required' => false],
+                'site' => ['label' => 'Site Name', 'required' => false],
                 'quotation_date' => ['label' => 'Date', 'required' => true, 'fixed' => true],
                 'valid_until' => ['label' => 'Valid until', 'required' => false],
                 'sales_person_id' => ['label' => 'Sales person', 'required' => true, 'fixed' => true],
@@ -331,6 +331,10 @@ return [
                 'po_value' => ['label' => 'PO value (when no items)', 'required' => true, 'fixed' => true],
                 'po_quantity' => ['label' => 'PO quantity', 'required' => false],
                 'validity' => ['label' => 'Validity start and end date', 'required' => false, 'inputs' => ['valid_from', 'valid_to']],
+                // (26/11/2026) delivery: Target date; once it has passed a Revised date with its reason; Delivered on
+                'target_delivery_date' => ['label' => 'Target delivery date', 'required' => false],
+                'delivery_revision' => ['label' => 'Revised delivery date and reason', 'required' => false, 'checked' => true, 'inputs' => ['revised_delivery_date', 'revised_reason']],
+                'delivered_on' => ['label' => 'Delivered on', 'required' => false],
                 'payment_terms' => ['label' => 'Payment terms', 'required' => false],
                 'tax_terms' => ['label' => 'GST / tax', 'required' => false],
                 'contact_name' => ['label' => 'Customer contact', 'required' => false],
@@ -630,7 +634,8 @@ return [
         'enquiry' => ['Enquiry document', 'Visiting card', 'Requirement email', 'Other'],
         'site_visit' => ['Site photo', 'Other'],
         'quotation' => ['BOQ', 'Costing approval', 'Quotation', 'Other'],
-        'customer_po' => ['Customer PO', 'Agreement', 'Other'],
+        // (26/11/2026) Plant deployment details: uploaded from the PO list too
+        'customer_po' => ['Customer PO', 'Agreement', 'Plant deployment details', 'Other'],
         // Upload PO on the sales order (SALES G11): PDF, JPG or PNG, up to 10 MB (S7).
         'sales_order' => ['Customer PO', 'Other'],
     ],

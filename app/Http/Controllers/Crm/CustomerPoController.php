@@ -132,6 +132,30 @@ class CustomerPoController extends Controller
      * PO list (01/11/2026): the unit's POs, 25 a page on the server, latest first. Search: PO no, customer name, enquiry
      * no ("starts with"), and a PO date range.
      */
+    /** (26/11/2026) The document type uploaded from the PO list's "Plant deployment" column. */
+    public const DEPLOY = 'Plant deployment details';
+
+    /**
+     * (26/11/2026) Pending deliveries of the unit: POs with a target delivery date and no delivered date, the earliest due
+     * first; overdue ones (past the revised, else target, date) are marked. Opened from the Dashboard's Delivery overdue.
+     */
+    public function deliveries(Request $request): View
+    {
+        $unit = WorkContext::unit()?->id;
+        $query = CustomerPo::query()->where('unit_id', $unit)->pendingDelivery()->with(['party:id,name', 'prospect:id,name'])
+            ->orderByRaw('coalesce(revised_delivery_date, target_delivery_date)')->orderBy('id');
+        $overdueOnly = $request->query('show') === 'overdue';
+        if ($overdueOnly) {
+            $query->deliveryOverdue();
+        }
+
+        return view('crm.customer-pos.deliveries', [
+            'rows' => $query->paginate(ListQuery::perPage($request))->withQueryString(),
+            'overdueOnly' => $overdueOnly,
+            'overdueCount' => CustomerPo::where('unit_id', $unit)->deliveryOverdue()->count(),
+        ]);
+    }
+
     public function list(Request $request): View
     {
         [$query, $filters, $errors] = self::listQuery($request);
@@ -139,9 +163,11 @@ class CustomerPoController extends Controller
 
         return view('crm.customer-pos.list', [
             'rows' => $query->with(['party:id,name', 'prospect:id,name', 'enquiry:id,enquiry_no', 'quotation:id,quotation_no,revision_no'])
-                ->withCount('lines')->paginate(ListQuery::perPage($request))->withQueryString(),
+                ->withCount(['lines', 'documents as deploy_count' => fn ($d) => $d->where('category', self::DEPLOY)])
+                ->paginate(ListQuery::perPage($request))->withQueryString(),
             'q' => $filters['q'], 'from' => $filters['from'], 'to' => $filters['to'], 'sort' => $sort, 'dir' => $dir,
-        ])->withErrors($errors);
+        // (26/11/2026) keep the message of a refused Plant deployment upload (sent back to this list) with the date errors
+        ])->withErrors((clone $errors)->merge(session('errors')?->getBag('default') ?? []));
     }
 
     /** Download CSV of the PO list as filtered: one row per PO, with its number of items and value. */

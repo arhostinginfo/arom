@@ -220,6 +220,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         // (02/11/2026): this is the only PO page again (no Customer picker route).
         Route::get('pos', [CustomerPoController::class, 'index'])->name('customer-pos.index')->middleware('permission:customer-po.view');
         Route::get('pos/list', [CustomerPoController::class, 'list'])->name('customer-pos.list')->middleware('permission:customer-po.view');
+        Route::get('pos/deliveries', [CustomerPoController::class, 'deliveries'])->name('customer-pos.deliveries')->middleware('permission:customer-po.view');
         Route::get('pos/export', [CustomerPoController::class, 'export'])->name('customer-pos.export')->middleware(['permission:customer-po.view', 'throttle:downloads']);
         Route::get('pos/lookup', [CustomerPoController::class, 'lookup'])->name('customer-pos.lookup')->middleware('permission:customer-po.view');
         Route::get('pos/items', [CustomerPoController::class, 'items'])->name('customer-pos.items')->middleware('permission:customer-po.view');

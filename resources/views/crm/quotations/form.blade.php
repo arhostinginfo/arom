@@ -97,7 +97,7 @@
   @include('crm.quotations.status', ['quotation' => $quotation, 'rule' => $rule, 'customerStatuses' => $customerStatuses])
 @endif
 
-<form method="POST" action="{{ $isNew ? route('crm.quotations.store') : route('crm.quotations.update', $quotation) }}" novalidate id="quotationForm" data-dirty-guard data-saving>
+<form method="POST" action="{{ $isNew ? route('crm.quotations.store') : route('crm.quotations.update', $quotation) }}" novalidate id="quotationForm" enctype="multipart/form-data" data-dirty-guard data-saving>
   @csrf
   @unless ($isNew) @method('PUT') @endunless
   <div class="sectcard">
@@ -132,7 +132,7 @@
                 @foreach ($enquiryOptions as $id => $label)<option value="{{ $id }}" @selected((string) $v('enquiry_id') === (string) $id)>{{ $label }}</option>@endforeach
               </select>
             </div>
-            <span class="hint txt">The client and enquiry no come from the enquiry. Open a quotation from the enquiry page to fill contact and site too.</span>
+            <span class="hint txt">The client and enquiry no come from the enquiry. Open a quotation from the enquiry page to fill the contact person and site name too.</span>
             @include('partials.ferr', ['name' => 'enquiry_id'])
           @else
             <span class="lbl" style="font-size:13px;font-weight:500">Client</span>
@@ -143,7 +143,7 @@
         </div>
         @if ($ps->show('contact_name'))
         <div class="field">
-          <label for="contact_name">Contact{{ $ps->star('contact_name') }}</label>
+          <label for="contact_name">Contact Person{{ $ps->star('contact_name') }}</label>
           <input class="inp @error('contact_name') err @enderror" id="contact_name" name="contact_name" value="{{ $v('contact_name') }}" maxlength="150" @required($ps->req('contact_name'))>
           @include('partials.ferr', ['name' => 'contact_name'])
           @if (($ph = $quotation?->enquiry?->clientPhone()))<span class="hint txt">Phone {{ $ph }} (from the Prospect)</span>@endif
@@ -152,7 +152,7 @@
         @endif
         @if ($ps->show('site'))
         <div class="field">
-          <label for="site">Site{{ $ps->star('site') }}</label>
+          <label for="site">Site Name{{ $ps->star('site') }}</label>
           <input class="inp @error('site') err @enderror" id="site" name="site" value="{{ $v('site') }}" maxlength="255" @required($ps->req('site'))>
           @include('partials.ferr', ['name' => 'site'])
         </div>
@@ -215,11 +215,26 @@
           @include('partials.ferr', ['name' => 'tax_structure_id'])
         </div>
         @endif
+        {{-- (26/11/2026) BOQ document beside Notes: saved as a BOQ document of the quotation on Submit (only while the BOQ part is on). --}}
+        @php($boqHere = \App\Http\Requests\Crm\QuotationRequest::boqUploadShown($isNew ? null : $quotation))
+        @if ($ps->show('notes') || $boqHere)
+        <div class="fgrid" style="grid-column:1/-1;min-width:0">
         @if ($ps->show('notes'))
-        <div class="field" style="grid-column:1/-1">
+        <div class="field">
           <label for="notes">Notes{{ $ps->star('notes') }}</label>
           <textarea class="inp @error('notes') err @enderror" id="notes" name="notes" rows="2" maxlength="2000" style="height:auto;padding-top:8px" @required($ps->req('notes'))>{{ $v('notes') }}</textarea>
           @include('partials.ferr', ['name' => 'notes'])
+        </div>
+        @endif
+        @if ($boqHere)
+        @php($boqKb = \App\Http\Requests\Crm\DocumentRequest::maxKb('quotation'))
+        <div class="field">
+          <label for="boq_file">BOQ document</label>
+          <input class="inp @error('boq_file') err @enderror" id="boq_file" type="file" name="boq_file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt,.eml,.msg" data-max-kb="{{ $boqKb }}" style="padding-top:6px" @error('boq_file') aria-invalid="true" @enderror>
+          <span class="hint txt">Optional. PDF, image, Word, Excel, CSV, text or email; max {{ \App\Support\UploadLimit::label($boqKb) }}. Saved when the quotation is saved, then listed under "BOQ and attachments".</span>
+          @include('partials.ferr', ['name' => 'boq_file'])
+        </div>
+        @endif
         </div>
         @endif
       </div>

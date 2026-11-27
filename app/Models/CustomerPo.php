@@ -21,7 +21,8 @@ class CustomerPo extends Model
 
     // quotation_id, enquiry_id and party_id are set by the service after their checks, not filled from the form (01/11/2026).
     public const FIELDS = ['po_no', 'po_date', 'site', 'po_value', 'po_quantity', 'valid_from', 'valid_to',
-        'payment_terms', 'tax_terms', 'contact_name', 'received_by', 'received_date', 'remarks'];
+        'payment_terms', 'tax_terms', 'contact_name', 'received_by', 'received_date', 'remarks',
+        'target_delivery_date', 'revised_delivery_date', 'revised_reason', 'delivered_on']; // delivery (26/11/2026)
 
     protected $fillable = self::FIELDS;
 
@@ -34,6 +35,9 @@ class CustomerPo extends Model
             'valid_from' => 'date',
             'valid_to' => 'date',
             'received_date' => 'date',
+            'target_delivery_date' => 'date',
+            'revised_delivery_date' => 'date',
+            'delivered_on' => 'date',
             'po_value' => 'decimal:2',
             'po_quantity' => 'decimal:3',
         ];
@@ -108,6 +112,33 @@ class CustomerPo extends Model
         }
 
         return \App\Support\Modules::on('crm') ? route('crm.customer-pos.show', $this) : null;
+    }
+
+    /** (26/11/2026) The date the delivery is due: the revised one when there is one, else the target. */
+    public function deliveryDue(): ?\Illuminate\Support\Carbon
+    {
+        return $this->revised_delivery_date ?? $this->target_delivery_date;
+    }
+
+    /** (26/11/2026) Not delivered yet and today is after its revised (else target) delivery date. */
+    public function deliveryOverdue(): bool
+    {
+        return ! $this->delivered_on && ($due = $this->deliveryDue()) && $due->lt(today());
+    }
+
+    /** (26/11/2026) Pending deliveries: a target delivery date and no delivered date. */
+    public function scopePendingDelivery($q)
+    {
+        return $q->whereNotNull('target_delivery_date')->whereNull('delivered_on');
+    }
+
+    /** (26/11/2026) Overdue deliveries: pending, and the revised (else target) date is before today. */
+    public function scopeDeliveryOverdue($q)
+    {
+        $today = today()->toDateString();
+
+        return $q->pendingDelivery()->where(fn ($w) => $w->where('revised_delivery_date', '<', $today)
+            ->orWhere(fn ($x) => $x->whereNull('revised_delivery_date')->where('target_delivery_date', '<', $today)));
     }
 
     public function clientName(): string

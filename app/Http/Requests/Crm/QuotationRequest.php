@@ -67,12 +67,28 @@ class QuotationRequest extends FormRequest
         }
 
         // Admin > Page setup: hidden header fields are not read; the rest are mandatory or optional as set up.
-        return app(\App\Services\PageSetupService::class)->rules('quotation', $rules);
+        $rules = app(\App\Services\PageSetupService::class)->rules('quotation', $rules);
+        // (26/11/2026) BOQ document beside Notes: optional, the same files and size as the "BOQ and attachments" upload
+        if (self::boqUploadShown($this->route('quotation'))) {
+            // the extension and the content check of the box too, so a text file renamed .pdf is refused and an old .doc / .xls / .msg is taken
+            $rules['boq_file'] = ['nullable', 'file', 'max:'.DocumentRequest::maxKb('quotation'), 'extensions:'.DocumentRequest::MIMES, DocumentRequest::contentRule()];
+        }
+
+        return $rules;
+    }
+
+    /** (26/11/2026) The BOQ upload beside Notes: while the BOQ part is on, on a new quotation or one whose documents can change. */
+    public static function boqUploadShown(?\App\Models\Quotation $q): bool
+    {
+        return \App\Support\Modules::on('boq') && ($q === null || \App\Services\DocumentService::canChange($q));
     }
 
     public function messages(): array
     {
-        return self::fieldMessages();
+        return self::fieldMessages() + [
+            'boq_file.max' => 'The BOQ document must not be larger than '.\App\Support\UploadLimit::label(DocumentRequest::maxKb('quotation')).'.',
+            'boq_file.extensions' => 'Upload a PDF, image (JPG, PNG, WEBP), Word, Excel, CSV, text or email file.',
+        ];
     }
 
     public function attributes(): array
@@ -82,7 +98,15 @@ class QuotationRequest extends FormRequest
 
     public function after(): array
     {
-        return [fn (Validator $v) => self::check($v, $this->all() + ['_existing' => (bool) $this->route('quotation'), '_quotation' => $this->route('quotation')])];
+        return [
+            fn (Validator $v) => self::check($v, $this->all() + ['_existing' => (bool) $this->route('quotation'), '_quotation' => $this->route('quotation')]),
+            // (26/11/2026) A chosen BOQ document is not kept when another field has an error: say so beside it.
+            function (Validator $v) {
+                if ($v->errors()->isNotEmpty() && ! $v->errors()->has('boq_file') && $this->hasFile('boq_file') && self::boqUploadShown($this->route('quotation'))) {
+                    $v->errors()->add('boq_file', 'Choose the BOQ document again: a chosen file is not kept while the form has an error.');
+                }
+            },
+        ];
     }
 
     /** Drop item rows where nothing was typed, and trim the rest. Amounts may be typed with commas. */
@@ -169,7 +193,9 @@ class QuotationRequest extends FormRequest
             'enquiry_id' => 'enquiry',
             'quotation_date' => 'quotation date',
             'valid_until' => 'valid until',
-            'contact_name' => 'contact',
+            'contact_name' => 'contact person',
+            'site' => 'site name',
+            'boq_file' => 'BOQ document',
             'sales_person_id' => 'sales person',
             'currency_id' => 'currency',
             'delivery_terms' => 'delivery / service terms',

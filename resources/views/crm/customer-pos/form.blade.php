@@ -180,6 +180,40 @@
           @include('partials.ferr', ['name' => 'valid_to'])
         </div>
         @endif
+        {{-- (26/11/2026) Delivery: once the Target delivery date has passed, a Revised delivery date and its reason open. --}}
+        @php
+          $tgt = $po->target_delivery_date;
+          $revOpen = ($tgt && $tgt->lt(today())) || $po->revised_delivery_date || old('revised_delivery_date');
+        @endphp
+        @if ($ps->show('target_delivery_date'))
+        <div class="field">
+          <label for="target_delivery_date">Target delivery date{{ $ps->star('target_delivery_date') }}</label>
+          <input class="inp num @error('target_delivery_date') err @enderror" id="target_delivery_date" @required($ps->req('target_delivery_date')) name="target_delivery_date" value="{{ $d('target_delivery_date') }}" placeholder="dd/mm/yyyy" inputmode="numeric">
+          @if ($po->exists && $po->deliveryOverdue())<span class="hint txt" style="color:var(--error-700)">Delivery overdue since {{ $po->deliveryDue()->format($df) }}</span>@endif
+          @include('partials.ferr', ['name' => 'target_delivery_date'])
+        </div>
+        @endif
+        @if ($ps->show('delivery_revision'))
+        <div class="field" data-rev-field @unless ($revOpen) hidden @endunless>
+          <label for="revised_delivery_date">Revised delivery date{{ $ps->star('delivery_revision') }}</label>
+          <input class="inp num @error('revised_delivery_date') err @enderror" id="revised_delivery_date" name="revised_delivery_date" value="{{ $d('revised_delivery_date') }}" placeholder="dd/mm/yyyy" inputmode="numeric">
+          <span class="hint txt">The target delivery date has passed: enter the new date.</span>
+          @include('partials.ferr', ['name' => 'revised_delivery_date'])
+        </div>
+        <div class="field" data-rev-field @unless ($revOpen) hidden @endunless>
+          <label for="revised_reason">Reason for revised date{{ $ps->star('delivery_revision') }}</label>
+          <input class="inp @error('revised_reason') err @enderror" id="revised_reason" name="revised_reason" value="{{ $v('revised_reason') }}" maxlength="255">
+          @include('partials.ferr', ['name' => 'revised_reason'])
+        </div>
+        @endif
+        @if ($ps->show('delivered_on'))
+        <div class="field">
+          <label for="delivered_on">Delivered on{{ $ps->star('delivered_on') }}</label>
+          <input class="inp num @error('delivered_on') err @enderror" id="delivered_on" @required($ps->req('delivered_on')) name="delivered_on" value="{{ $d('delivered_on') }}" placeholder="dd/mm/yyyy" inputmode="numeric">
+          <span class="hint txt">Leave empty until the plants are delivered; until then the PO is a pending delivery.</span>
+          @include('partials.ferr', ['name' => 'delivered_on'])
+        </div>
+        @endif
         @if ($ps->show('payment_terms'))
         <div class="field">
           <label for="payment_terms">Payment terms{{ $ps->star('payment_terms') }}</label>
@@ -331,4 +365,14 @@
 @push('scripts')
 <script src="{{ asset('js/crm.js') }}?v={{ filemtime(public_path('js/crm.js')) }}"></script>
 <script src="{{ asset('js/customer-po.js') }}?v={{ filemtime(public_path('js/customer-po.js')) }}"></script>
+<script>
+// (26/11/2026) The Revised delivery date opens as soon as the Target delivery date typed is before today.
+(function(){
+  var t=document.getElementById('target_delivery_date'),f=document.querySelectorAll('[data-rev-field]'),r=document.getElementById('revised_delivery_date');
+  if(!t||!f.length)return;
+  var past=function(){var m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t.value.trim());if(!m)return false;var d=new Date(+m[3],+m[2]-1,+m[1]),n=new Date();n.setHours(0,0,0,0);return d<n};
+  var sync=function(){var on=past()||(r&&r.value.trim()!=='');f.forEach(function(x){x.hidden=!on})};
+  t.addEventListener('input',sync);t.addEventListener('change',sync);sync();
+})();
+</script>
 @endpush

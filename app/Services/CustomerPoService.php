@@ -25,7 +25,7 @@ use Illuminate\Validation\ValidationException;
  */
 class CustomerPoService
 {
-    private const DATE_FIELDS = ['po_date', 'valid_from', 'valid_to', 'received_date'];
+    private const DATE_FIELDS = ['po_date', 'valid_from', 'valid_to', 'received_date', 'target_delivery_date', 'revised_delivery_date', 'delivered_on'];
 
     /** Retries after a deadlock (database review DB-C1). */
     private const ATTEMPTS = 3;
@@ -173,6 +173,10 @@ class CustomerPoService
             'PO quantity' => $po->po_quantity,
             'Valid from' => Dates::show($po->valid_from),
             'Valid to' => Dates::show($po->valid_to),
+            'Target delivery date' => Dates::show($po->target_delivery_date),
+            'Revised delivery date' => Dates::show($po->revised_delivery_date),
+            'Reason for revised date' => $po->revised_reason,
+            'Delivered on' => Dates::show($po->delivered_on),
             'Payment terms' => $po->payment_terms,
             'GST / tax' => $po->tax_terms,
             'Customer contact' => $po->contact_name,
@@ -213,6 +217,10 @@ class CustomerPoService
             if (array_key_exists($f, $out)) {
                 $out[$f] = Dates::toDb($out[$f]);
             }
+        }
+        // (26/11/2026) Revised delivery date cleared: its reason goes with it.
+        if (array_key_exists('revised_delivery_date', $out) && $out['revised_delivery_date'] === null) {
+            $out['revised_reason'] = null;
         }
         // With items the value is their sum (saveLines); a blank value is not taken from the form.
         if (! isset($out['po_value']) || $out['po_value'] === '') {

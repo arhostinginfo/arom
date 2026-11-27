@@ -71,17 +71,37 @@ class QuotationController extends Controller
 
     public function store(QuotationRequest $request): RedirectResponse
     {
-        $q = $this->quotations->create($request->validated(), $request->user(), $this->unit());
+        $q = $this->quotations->create($request->safe()->except('boq_file'), $request->user(), $this->unit());
 
-        return redirect()->route('crm.quotations.show', $q)->with('toast', 'Quotation '.$q->quotation_no.' created');
+        return redirect()->route('crm.quotations.show', $q)->with('toast', 'Quotation '.$q->quotation_no.' created'.$this->saveBoq($request, $q));
+    }
+
+    /**
+     * (26/11/2026) The BOQ document chosen beside Notes: saved as a BOQ document of the quotation, as from "BOQ and
+     * attachments". The quotation is already saved; a file that cannot be stored is said in the message, not lost silently.
+     */
+    private function saveBoq(QuotationRequest $request, Quotation $q): string
+    {
+        if (! $request->hasFile('boq_file') || ! QuotationRequest::boqUploadShown($q)) {
+            return '';
+        }
+        try {
+            app(\App\Services\DocumentService::class)->upload($q, 'BOQ', $request->file('boq_file'), $request->user());
+
+            return ' with its BOQ document';
+        } catch (\Throwable $e) {
+            report($e);
+
+            return '. The BOQ document could not be saved: upload it again under "BOQ and attachments"';
+        }
     }
 
     public function update(QuotationRequest $request, Quotation $quotation): RedirectResponse
     {
         $this->authorizeUnit($quotation);
-        $this->quotations->update($quotation, $request->validated(), $request->user());
+        $this->quotations->update($quotation, $request->safe()->except('boq_file'), $request->user());
 
-        return redirect()->route('crm.quotations.show', $quotation)->with('toast', $quotation->activityLabel().' saved');
+        return redirect()->route('crm.quotations.show', $quotation)->with('toast', $quotation->activityLabel().' saved'.$this->saveBoq($request, $quotation->fresh()));
     }
 
     public function revise(Request $request, Quotation $quotation): RedirectResponse

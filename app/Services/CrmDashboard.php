@@ -100,6 +100,8 @@ class CrmDashboard
                 'open' => (clone $open)->count(),
                 'hot' => (clone $open)->where('lead_rating', LeadRating::Hot->value)->count(),
                 'po_pending' => Quotation::where('unit_id', $unit->id)->poPending()->count(),
+                // (26/11/2026) POs not delivered whose revised (else target) delivery date has passed
+                'delivery_overdue' => CustomerPo::where('unit_id', $unit->id)->deliveryOverdue()->count(),
                 'closing' => (clone $open)->whereBetween('expected_closing_date', [$today->copy()->startOfMonth()->toDateString(), $monthEnd])->count(),
                 'closing_value' => (float) (clone $open)->whereBetween('expected_closing_date', [$today->copy()->startOfMonth()->toDateString(), $monthEnd])->sum('estimated_value'),
             ],
